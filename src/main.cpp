@@ -4,12 +4,23 @@
 #include <algorithm>
 #include <random>
 #include <ctime>
+
 int main() {
     sf::RenderWindow window(sf::VideoMode({1920, 1080}), "Arrow Madness");
+
+    sf::Image icon;
+    icon.loadFromFile("img/icon.png");
+    window.setIcon(icon);
 
     sf::Texture texture;
     texture.loadFromFile("img/background.png");
     sf::Sprite background(texture);
+
+    sf::RectangleShape line(sf::Vector2f(1920.f, 200.f));
+    line.setPosition({0.f, 440.f});
+    line.setFillColor(sf::Color(0, 255, 0, 50)); 
+    sf::Color lineColor(255, 100, 100, 128);
+    line.setFillColor(lineColor);
 
     sf::Texture arrowTexture;
     arrowTexture.loadFromFile("img/arrow.png");
@@ -50,12 +61,15 @@ int main() {
     std::vector<float> ballsY   = {400.f, 130.f};
 
     std::mt19937 gen(static_cast<unsigned int>(std::time(nullptr)));
-    std::uniform_real_distribution<float> timeDist(2.0f, 5.0f);     
+    std::uniform_real_distribution<float> timeDist(0.5f, 3.0f);     
     std::uniform_int_distribution<int> dirDist(1, 4);              
     std::uniform_real_distribution<float> xDist(100.f, 1800.f);     
 
     sf::Clock spawnClock;
-    float nextSpawnTime = timeDist(gen); 
+    float nextSpawnTime = timeDist(gen);
+    
+    sf::Texture ballTexture;
+    ballTexture.loadFromFile("img/ball.png");
 
     while (window.isOpen()) {
         while (const std::optional event = window.pollEvent()) {
@@ -66,50 +80,41 @@ int main() {
                 if (mouseClick->button == sf::Mouse::Button::Left) {
                     sf::Vector2f mousePos = window.mapPixelToCoords(mouseClick->position);
 
+                    auto checkHit = [&](int targetDir) {
+                        bool hit = false;
+                        
+                        for (size_t i = 0; i < ballsDir.size(); ++i) {
+                            if (ballsDir[i] == targetDir && ballsY[i] > 390.f && ballsY[i] < 690.f) {
+                                ballsDir[i] = -1; 
+                                int currentPoints = std::stoi(points.getString().toAnsiString());
+                                points.setString(std::to_string(currentPoints + 1));
+                                hit = true;
+                                break;
+                            }
+                        }
+
+                        if (!hit) {
+                            points.setString("0");
+                        }
+                    };
+
                     if (up.getGlobalBounds().contains(mousePos)) {
                         up.setColor(clicked);
-                        auto it = std::find(ballsDir.begin(), ballsDir.end(), 1);
-
-                        if (it != ballsDir.end()) {
-                            *it = -1;
-                            points.setString(std::to_string(std::stoi(points.getString().toAnsiString()) + 1));
-                        } else {
-                            points.setString("0");
-                        }
-                    } 
-                    if (down.getGlobalBounds().contains(mousePos)) {
+                        checkHit(1);
+                    }
+                    else if (down.getGlobalBounds().contains(mousePos)) {
                         down.setColor(clicked);
-                        auto it = std::find(ballsDir.begin(), ballsDir.end(), 2);
-
-                        if (it != ballsDir.end()) {
-                            *it = -1;
-                            points.setString(std::to_string(std::stoi(points.getString().toAnsiString()) + 1));
-                        } else {
-                            points.setString("0");
-                        }
+                        checkHit(2);
                     }
-                    if (left.getGlobalBounds().contains(mousePos)) {
+                    else if (left.getGlobalBounds().contains(mousePos)) {
                         left.setColor(clicked);
-                        auto it = std::find(ballsDir.begin(), ballsDir.end(), 3);
-
-                        if (it != ballsDir.end()) {
-                            *it = -1;
-                            points.setString(std::to_string(std::stoi(points.getString().toAnsiString()) + 1));
-                        } else {
-                            points.setString("0");
-                        }
+                        checkHit(3);
                     }
-                    if (right.getGlobalBounds().contains(mousePos)) {
+                    else if (right.getGlobalBounds().contains(mousePos)) {
                         right.setColor(clicked);
-                        auto it = std::find(ballsDir.begin(), ballsDir.end(), 4);
-
-                        if (it != ballsDir.end()) {
-                            *it = -1;
-                            points.setString(std::to_string(std::stoi(points.getString().toAnsiString()) + 1));
-                        } else {
-                            points.setString("0");
-                        }
+                        checkHit(4);
                     }
+
                 }
             }
 
@@ -134,17 +139,11 @@ int main() {
 
         window.clear();
         window.draw(background);
-        window.draw(up);
-        window.draw(down);
-        window.draw(right);
-        window.draw(left);
-        window.draw(points);
-        
+        window.draw(line);
+
         for (size_t i = 0; i < ballsDir.size(); i++) {
             if (ballsDir[i] == -1) continue;
 
-            sf::Texture ballTexture;
-            ballTexture.loadFromFile("img/ball.png");
             sf::Sprite ballSprite(ballTexture);
 
             float dir = 0.f;
@@ -166,6 +165,13 @@ int main() {
             ballsY[i] += 0.1f;
             window.draw(ballSprite);
         }
+
+        window.draw(up);
+        window.draw(down);
+        window.draw(right);
+        window.draw(left);
+        window.draw(points);
+        
         window.display();
     }
 
