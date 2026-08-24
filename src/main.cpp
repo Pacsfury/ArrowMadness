@@ -1,9 +1,11 @@
 #include <SFML/Graphics.hpp>
-#include <iostream>
-#include <vector>
 #include <algorithm>
-#include <random>
 #include <ctime>
+#include <iostream>
+#include <random>
+#include <vector>
+
+#include "../include/help.hpp"
 
 int main() {
     sf::RenderWindow window(sf::VideoMode({1920, 1080}), "Arrow Madness");
@@ -18,7 +20,7 @@ int main() {
 
     sf::RectangleShape line(sf::Vector2f(1920.f, 200.f));
     line.setPosition({0.f, 440.f});
-    line.setFillColor(sf::Color(0, 255, 0, 50)); 
+    line.setFillColor(sf::Color(0, 255, 0, 50));
     sf::Color lineColor(255, 100, 100, 128);
     line.setFillColor(lineColor);
 
@@ -29,7 +31,7 @@ int main() {
     sf::Sprite right(arrowTexture);
     sf::Sprite left(arrowTexture);
 
-    sf::Font font("fonts/Super Bouncer.ttf"); 
+    sf::Font font("fonts/Super Bouncer.ttf");
     sf::Text points(font);
     points.setPosition({960.f, 0.f});
     points.setCharacterSize(90);
@@ -52,22 +54,22 @@ int main() {
     right.setRotation(Angle);
     Angle = sf::degrees(90.f);
     left.setRotation(Angle);
-    
+
     sf::Color clicked(255, 255, 255, 128);
     sf::Color released(255, 255, 255, 255);
 
-    std::vector<int>   ballsDir = {1, 3};
-    std::vector<float> ballsX   = {130.f, 180.f};
-    std::vector<float> ballsY   = {400.f, 130.f};
+    std::vector<int> ballsDir = {1, 3};
+    std::vector<float> ballsX = {130.f, 180.f};
+    std::vector<float> ballsY = {400.f, 130.f};
 
     std::mt19937 gen(static_cast<unsigned int>(std::time(nullptr)));
-    std::uniform_real_distribution<float> timeDist(0.5f, 3.0f);     
-    std::uniform_int_distribution<int> dirDist(1, 4);              
-    std::uniform_real_distribution<float> xDist(100.f, 1800.f);     
+    std::uniform_real_distribution<float> timeDist(0.5f, 3.0f);
+    std::uniform_int_distribution<int> dirDist(1, 4);
+    std::uniform_real_distribution<float> xDist(100.f, 1800.f);
 
     sf::Clock spawnClock;
     float nextSpawnTime = timeDist(gen);
-    
+
     sf::Texture ballTexture;
     ballTexture.loadFromFile("img/ball.png");
 
@@ -75,50 +77,26 @@ int main() {
         while (const std::optional event = window.pollEvent()) {
             if (event->is<sf::Event::Closed>()) {
                 window.close();
-            } 
-            else if (const auto* mouseClick = event->getIf<sf::Event::MouseButtonPressed>()) {
+
+            } else if (const auto* mouseClick = event->getIf<sf::Event::MouseButtonPressed>()) {
                 if (mouseClick->button == sf::Mouse::Button::Left) {
                     sf::Vector2f mousePos = window.mapPixelToCoords(mouseClick->position);
 
-                    auto checkHit = [&](int targetDir) {
-                        bool hit = false;
-                        
-                        for (size_t i = 0; i < ballsDir.size(); ++i) {
-                            if (ballsDir[i] == targetDir && ballsY[i] > 390.f && ballsY[i] < 690.f) {
-                                ballsDir[i] = -1; 
-                                int currentPoints = std::stoi(points.getString().toAnsiString());
-                                points.setString(std::to_string(currentPoints + 1));
-                                hit = true;
-                                break;
-                            }
-                        }
-
-                        if (!hit) {
-                            points.setString("0");
-                        }
-                    };
-
                     if (up.getGlobalBounds().contains(mousePos)) {
                         up.setColor(clicked);
-                        checkHit(1);
-                    }
-                    else if (down.getGlobalBounds().contains(mousePos)) {
+                        checkHit(1, ballsDir, ballsY, points);
+                    } else if (down.getGlobalBounds().contains(mousePos)) {
                         down.setColor(clicked);
-                        checkHit(2);
-                    }
-                    else if (left.getGlobalBounds().contains(mousePos)) {
+                        checkHit(2, ballsDir, ballsY, points);
+                    } else if (left.getGlobalBounds().contains(mousePos)) {
                         left.setColor(clicked);
-                        checkHit(3);
-                    }
-                    else if (right.getGlobalBounds().contains(mousePos)) {
+                        checkHit(3, ballsDir, ballsY, points);
+                    } else if (right.getGlobalBounds().contains(mousePos)) {
                         right.setColor(clicked);
-                        checkHit(4);
+                        checkHit(4, ballsDir, ballsY, points);
                     }
-
                 }
-            }
-
-            else if (const auto* mouseRelease = event->getIf<sf::Event::MouseButtonReleased>()) {
+            } else if (const auto* mouseRelease = event->getIf<sf::Event::MouseButtonReleased>()) {
                 if (mouseRelease->button == sf::Mouse::Button::Left) {
                     up.setColor(released);
                     down.setColor(released);
@@ -129,11 +107,11 @@ int main() {
         }
 
         if (spawnClock.getElapsedTime().asSeconds() >= nextSpawnTime) {
-            ballsDir.push_back(dirDist(gen)); 
-            ballsX.push_back(xDist(gen)); 
-            ballsY.push_back(0.f);           
+            ballsDir.push_back(dirDist(gen));
+            ballsX.push_back(xDist(gen));
+            ballsY.push_back(0.f);
 
-            spawnClock.restart();            
+            spawnClock.restart();
             nextSpawnTime = timeDist(gen);
         }
 
@@ -141,28 +119,15 @@ int main() {
         window.draw(background);
         window.draw(line);
 
+        sf::Sprite ballSprite(ballTexture);
         for (size_t i = 0; i < ballsDir.size(); i++) {
-            if (ballsDir[i] == -1) continue;
+            if (ballsDir[i] == -1)
+                continue;
 
-            sf::Sprite ballSprite(ballTexture);
-
-            float dir = 0.f;
-            int currDir = ballsDir[i];
-
-            if (currDir == 1) {
-                dir = 0.f;
-            } else if (currDir == 2) {
-                dir = 180.f;
-            } else if (currDir == 3) {
-                dir = 90.f;
-            } else if (currDir == 4) {
-                dir = -90.f;
-            }
-
-            sf::Angle ballAngle = sf::degrees(dir);
-            ballSprite.setRotation(ballAngle);
+            ballSprite.setRotation(sf::degrees(getDir(ballsDir[i])));
             ballSprite.setPosition({ballsX[i], ballsY[i]});
             ballsY[i] += 0.1f;
+            
             window.draw(ballSprite);
         }
 
@@ -171,7 +136,7 @@ int main() {
         window.draw(right);
         window.draw(left);
         window.draw(points);
-        
+
         window.display();
     }
 
