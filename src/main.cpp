@@ -26,11 +26,23 @@ int main() {
     line.setFillColor(lineColor);
 
     sf::Texture arrowTexture;
+    sf::Texture heartTexture;
+    sf::Texture replayTexture;
+    heartTexture.loadFromFile("img/heart.png");
     arrowTexture.loadFromFile("img/arrow.png");
+    replayTexture.loadFromFile("img/replay.png");
     sf::Sprite up(arrowTexture);
     sf::Sprite down(arrowTexture);
     sf::Sprite right(arrowTexture);
     sf::Sprite left(arrowTexture);
+    sf::Sprite heart(heartTexture);
+    sf::Sprite replay(replayTexture);
+    sf::FloatRect rebounds = replay.getLocalBounds();
+    replay.setOrigin({rebounds.size.x / 2.f, rebounds.size.y / 2.f});
+    replay.setPosition({960.f, 540.f});
+    replay.setScale({0.3, 0.3});
+
+    sf::FloatRect bounds = up.getLocalBounds();
 
     sf::Font font("fonts/Super Bouncer.ttf");
     sf::Text points(font);
@@ -38,7 +50,18 @@ int main() {
     points.setCharacterSize(90);
     points.setString("0");
 
-    sf::FloatRect bounds = up.getLocalBounds();
+    sf::Text gameover(font);
+    gameover.setString("Game Over!");
+    gameover.setCharacterSize(160);
+
+    sf::FloatRect gobounds = gameover.getLocalBounds();
+    gameover.setOrigin({
+        gobounds.position.x + gobounds.size.x / 2.f, 
+        gobounds.position.y + gobounds.size.y / 2.f
+    });
+
+    gameover.setPosition({960.f, 300.f});
+
     up.setOrigin({bounds.size.x / 2.f, bounds.size.y / 2.f});
     down.setOrigin({bounds.size.x / 2.f, bounds.size.y / 2.f});
     right.setOrigin({bounds.size.x / 2.f, bounds.size.y / 2.f});
@@ -59,6 +82,9 @@ int main() {
     sf::Color clicked(255, 255, 255, 128);
     sf::Color released(255, 255, 255, 255);
 
+    int lives = 3;
+    std::string screen = "GAME";
+
     std::vector<int> ballsDir = {1, 3};
     std::vector<float> ballsX = {130.f, 180.f};
     std::vector<float> ballsY = {400.f, 130.f};
@@ -73,6 +99,7 @@ int main() {
 
     sf::Texture ballTexture;
     ballTexture.loadFromFile("img/ball.png");
+    sf::Sprite ballSprite(ballTexture);
 
     while (window.isOpen()) {
         while (const std::optional event = window.pollEvent()) {
@@ -80,21 +107,33 @@ int main() {
                 window.close();
 
             } else if (const auto* mouseClick = event->getIf<sf::Event::MouseButtonPressed>()) {
-                if (mouseClick->button == sf::Mouse::Button::Left) {
-                    sf::Vector2f mousePos = window.mapPixelToCoords(mouseClick->position);
+                sf::Vector2f mousePos = window.mapPixelToCoords(mouseClick->position);
+                if (screen == "GAME") {
+                    if (mouseClick->button == sf::Mouse::Button::Left) {
+                        bool res = false;
 
-                    if (up.getGlobalBounds().contains(mousePos)) {
-                        up.setColor(clicked);
-                        checkHit(1, ballsDir, ballsY, points);
-                    } else if (down.getGlobalBounds().contains(mousePos)) {
-                        down.setColor(clicked);
-                        checkHit(2, ballsDir, ballsY, points);
-                    } else if (left.getGlobalBounds().contains(mousePos)) {
-                        left.setColor(clicked);
-                        checkHit(3, ballsDir, ballsY, points);
-                    } else if (right.getGlobalBounds().contains(mousePos)) {
-                        right.setColor(clicked);
-                        checkHit(4, ballsDir, ballsY, points);
+                        if (up.getGlobalBounds().contains(mousePos)) {
+                            up.setColor(clicked);
+                            res = checkHit(1, ballsDir, ballsY, points, lives);
+                        } else if (down.getGlobalBounds().contains(mousePos)) {
+                            down.setColor(clicked);
+                            res = checkHit(2, ballsDir, ballsY, points, lives);
+                        } else if (left.getGlobalBounds().contains(mousePos)) {
+                            left.setColor(clicked);
+                            res = checkHit(3, ballsDir, ballsY, points, lives);
+                        } else if (right.getGlobalBounds().contains(mousePos)) {
+                            right.setColor(clicked);
+                            res = checkHit(4, ballsDir, ballsY, points, lives);
+                        }
+
+                        if (res) {
+                            screen = "OVER";
+                        }
+                    }
+                } else if (screen == "OVER") {
+                    if (replay.getGlobalBounds().contains(mousePos)) {
+                        screen = "GAME";
+                        lives = 3;
                     }
                 }
             } else if (const auto* mouseRelease = event->getIf<sf::Event::MouseButtonReleased>()) {
@@ -107,36 +146,46 @@ int main() {
             }
         }
 
-        if (spawnClock.getElapsedTime().asSeconds() >= nextSpawnTime) {
-            ballsDir.push_back(dirDist(gen));
-            ballsX.push_back(xDist(gen));
-            ballsY.push_back(0.f);
+        if (screen == "GAME") {
+            if (spawnClock.getElapsedTime().asSeconds() >= nextSpawnTime) {
+                ballsDir.push_back(dirDist(gen));
+                ballsX.push_back(xDist(gen));
+                ballsY.push_back(0.f);
 
-            spawnClock.restart();
-            nextSpawnTime = timeDist(gen);
+                spawnClock.restart();
+                nextSpawnTime = timeDist(gen);
+            }
+
+            window.clear();
+            window.draw(background);
+            window.draw(line);
+
+            for (size_t i = 0; i < ballsDir.size(); i++) {
+                if (ballsDir[i] == -1)
+                    continue;
+
+                ballSprite.setRotation(sf::degrees(getDir(ballsDir[i])));
+                ballSprite.setPosition({ballsX[i], ballsY[i]});
+                ballsY[i] += 10.f;
+
+                window.draw(ballSprite);
+            }
+
+            window.draw(up);
+            window.draw(down);
+            window.draw(right);
+            window.draw(left);
+            window.draw(points);
+
+            for (int i = 0; i < lives ; i++) {
+                heart.setPosition({10.f + (i*120.f), 10.f});
+                window.draw(heart);
+            }
+        } else if (screen == "OVER") {
+            window.draw(background);
+            window.draw(gameover);
+            window.draw(replay);
         }
-
-        window.clear();
-        window.draw(background);
-        window.draw(line);
-
-        sf::Sprite ballSprite(ballTexture);
-        for (size_t i = 0; i < ballsDir.size(); i++) {
-            if (ballsDir[i] == -1)
-                continue;
-
-            ballSprite.setRotation(sf::degrees(getDir(ballsDir[i])));
-            ballSprite.setPosition({ballsX[i], ballsY[i]});
-            ballsY[i] += 10.f;
-
-            window.draw(ballSprite);
-        }
-
-        window.draw(up);
-        window.draw(down);
-        window.draw(right);
-        window.draw(left);
-        window.draw(points);
 
         window.display();
     }

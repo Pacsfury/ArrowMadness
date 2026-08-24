@@ -4,7 +4,7 @@
 
 #include "../include/help.hpp"
 
-void checkHit(int targetDir, std::vector<int>& ballsDir, std::vector<float>& ballsY, sf::Text& points) {
+bool checkHit(int targetDir, std::vector<int>& ballsDir, std::vector<float>& ballsY, sf::Text& points, int& lives) {
     bool hit = false;
 
     for (size_t i = 0; i < ballsDir.size(); ++i) {
@@ -18,8 +18,13 @@ void checkHit(int targetDir, std::vector<int>& ballsDir, std::vector<float>& bal
     }
 
     if (!hit) {
-        points.setString("0");
+        lives -= 1;
+        if (lives < 1) {
+            points.setString("0");
+            return true;
+        }
     }
+    return false;
 }
 
 float getDir(int currDir) {
