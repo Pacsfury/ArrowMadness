@@ -9,6 +9,7 @@
 
 int main() {
     sf::RenderWindow window(sf::VideoMode({1920, 1080}), "Arrow Madness");
+    window.setVerticalSyncEnabled(true);
 
     sf::Image icon;
     icon.loadFromFile("img/icon.png");
@@ -126,8 +127,8 @@ int main() {
 
             ballSprite.setRotation(sf::degrees(getDir(ballsDir[i])));
             ballSprite.setPosition({ballsX[i], ballsY[i]});
-            ballsY[i] += 0.1f;
-            
+            ballsY[i] += 10.f;
+
             window.draw(ballSprite);
         }
 
