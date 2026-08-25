@@ -1,15 +1,12 @@
-#include <unordered_map>
-#include <string>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <sstream>
+#include <string>
+#include <unordered_map>
 
 #include "../include/datakeeper.hpp"
 
-
-void Table::save(std::string K, std::string V) {
-    KV[K] = V;
-}
+void Table::save(std::string K, std::string V) { KV[K] = V; }
 std::string Table::get(std::string K) {
     auto it = KV.find(K);
     if (it != KV.end()) {
@@ -17,9 +14,7 @@ std::string Table::get(std::string K) {
     }
     return "";
 }
-Table::Table(int id) {
-    this->id = id;
-}
+Table::Table(int id) { this->id = id; }
 
 void Table::file() {
     std::ofstream table("_ArrowMadnessUserData.txt");
@@ -29,9 +24,7 @@ void Table::file() {
     }
 }
 
-void Table::reset() {
-    this->KV.clear();
-}
+void Table::reset() { this->KV.clear(); }
 
 void Table::load() {
     std::ifstream table("_ArrowMadnessUserData.txt");

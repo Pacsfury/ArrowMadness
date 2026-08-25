@@ -5,8 +5,11 @@
 #include <random>
 #include <vector>
 
-#include "../include/help.hpp"
 #include "../include/datakeeper.hpp"
+#include "../include/help.hpp"
+#include "../include/sprites.hpp"
+
+enum class screens : uint16_t { GAME, OVER, MENU, SHOP };
 
 int main() {
     sf::RenderWindow window(sf::VideoMode({1920, 1080}), "Arrow Madness");
@@ -20,69 +23,38 @@ int main() {
     icon.loadFromFile("img/icon.png");
     window.setIcon(icon);
 
-    sf::Texture texture;
-    texture.loadFromFile("img/background.png");
-    sf::Sprite background(texture);
-
     sf::RectangleShape line(sf::Vector2f(1920.f, 200.f));
     line.setPosition({0.f, 440.f});
-    line.setFillColor(sf::Color(0, 255, 0, 50));
-    sf::Color lineColor(255, 100, 100, 128);
-    line.setFillColor(lineColor);
+    line.setFillColor(sf::Color(255, 100, 100, 128));
 
-    sf::Texture arrowTexture;
-    sf::Texture heartTexture;
-    sf::Texture replayTexture;
-    sf::Texture menuTexture;
-    sf::Texture quitTexture;
-    sf::Texture brokenHeartTexture;
-    sf::Texture playTexture;
-    sf::Texture shopTexture;
-    sf::Texture starterPackTexture;
-    sf::Texture backTexture;
-    heartTexture.loadFromFile("img/heart.png");
-    arrowTexture.loadFromFile("img/arrow.png");
-    replayTexture.loadFromFile("img/replay.png");
-    menuTexture.loadFromFile("img/menu.png");
-    quitTexture.loadFromFile("img/quit.png");
-    playTexture.loadFromFile("img/play.png");
-    shopTexture.loadFromFile("img/shop.png");
-    brokenHeartTexture.loadFromFile("img/brokenh.png");
-    starterPackTexture.loadFromFile("img/starter.png");
-    backTexture.loadFromFile("img/back.png");
-
-    sf::Sprite up(arrowTexture);
-    sf::Sprite down(arrowTexture);
-    sf::Sprite right(arrowTexture);
-    sf::Sprite left(arrowTexture);
-    sf::Sprite heart(heartTexture);
-    sf::Sprite replay(replayTexture);
-    sf::Sprite menu(menuTexture);
-    sf::Sprite quit(quitTexture);
-    sf::Sprite broken(brokenHeartTexture);
-    sf::Sprite play(playTexture);
-    sf::Sprite shop(shopTexture);
-    sf::Sprite starterPackOffer(starterPackTexture);
-    sf::Sprite back(backTexture);
+    auto background = newSprite("img/background.png", false);
+    auto up = newSprite("img/arrow.png");
+    auto down = newSprite("img/arrow.png");
+    auto right = newSprite("img/arrow.png");
+    auto left = newSprite("img/arrow.png");
+    auto heart = newSprite("img/heart.png", false);
+    auto replay = newSprite("img/replay.png");
+    auto menu = newSprite("img/menu.png");
+    auto quit = newSprite("img/quit.png");
+    auto broken = newSprite("img/brokenh.png", false);
+    auto play = newSprite("img/play.png");
+    auto shop = newSprite("img/shop.png");
+    auto starterPackOffer = newSprite("img/starter.png", false);
+    auto back = newSprite("img/back.png");
+    auto ball = newSprite("img/ball.png", false);
 
     sf::FloatRect rebounds = replay.getLocalBounds();
-    replay.setOrigin({rebounds.size.x / 2.f, rebounds.size.y / 2.f});
     replay.setPosition({960.f, 360.f});
     replay.setScale({0.25, 0.25});
-    menu.setOrigin({rebounds.size.x / 2.f, rebounds.size.y / 2.f});
     menu.setPosition({960.f, 600.f});
     menu.setScale({0.25, 0.25});
-    quit.setOrigin({rebounds.size.x / 2.f, rebounds.size.y / 2.f});
     quit.setPosition({960.f, 840.f});
     quit.setScale({0.25, 0.25});
-    play.setOrigin({rebounds.size.x / 2.f, rebounds.size.y / 2.f});
     play.setPosition({1670.f, 870.f});
     play.setScale({0.25, 0.25});
-    shop.setOrigin({rebounds.size.x / 2.f, rebounds.size.y / 2.f});
     shop.setPosition({1670.f, 620.f});
     shop.setScale({0.25, 0.25});
     starterPackOffer.setScale({0.5, 0.5});
-    back.setOrigin({rebounds.size.x / 2.f, rebounds.size.y / 2.f});
     back.setPosition({1670.f, 870.f});
     back.setScale({0.25, 0.25});
 
@@ -97,12 +69,8 @@ int main() {
     sf::Text gameover(font);
     gameover.setString("Game Over!");
     gameover.setCharacterSize(160);
-
     sf::FloatRect gobounds = gameover.getLocalBounds();
-    gameover.setOrigin({
-        gobounds.position.x + gobounds.size.x / 2.f, 
-        gobounds.position.y + gobounds.size.y / 2.f
-    });
+    gameover.setOrigin({gobounds.position.x + gobounds.size.x / 2.f, gobounds.position.y + gobounds.size.y / 2.f});
 
     gameover.setPosition({960.f, 120.f});
 
@@ -127,7 +95,7 @@ int main() {
     sf::Color released(255, 255, 255, 255);
 
     int lives = 3;
-    std::string screen = "GAME";
+    screens screen = screens::GAME;
 
     std::vector<int> ballsDir = {1, 3};
     std::vector<float> ballsX = {130.f, 180.f};
@@ -141,10 +109,6 @@ int main() {
     sf::Clock spawnClock;
     float nextSpawnTime = timeDist(gen);
 
-    sf::Texture ballTexture;
-    ballTexture.loadFromFile("img/ball.png");
-    sf::Sprite ballSprite(ballTexture);
-
     while (window.isOpen()) {
         while (const std::optional event = window.pollEvent()) {
             if (event->is<sf::Event::Closed>()) {
@@ -152,54 +116,63 @@ int main() {
 
             } else if (const auto* mouseClick = event->getIf<sf::Event::MouseButtonPressed>()) {
                 sf::Vector2f mousePos = window.mapPixelToCoords(mouseClick->position);
-                if (screen == "GAME") {
-                    if (mouseClick->button == sf::Mouse::Button::Left) {
-                        bool res = false;
 
-                        if (up.getGlobalBounds().contains(mousePos)) {
-                            up.setColor(clicked);
-                            res = checkHit(1, ballsDir, ballsY, points, lives);
-                        } else if (down.getGlobalBounds().contains(mousePos)) {
-                            down.setColor(clicked);
-                            res = checkHit(2, ballsDir, ballsY, points, lives);
-                        } else if (left.getGlobalBounds().contains(mousePos)) {
-                            left.setColor(clicked);
-                            res = checkHit(3, ballsDir, ballsY, points, lives);
-                        } else if (right.getGlobalBounds().contains(mousePos)) {
-                            right.setColor(clicked);
-                            res = checkHit(4, ballsDir, ballsY, points, lives);
+                switch (screen) {
+                    case screens::GAME:
+                        if (mouseClick->button == sf::Mouse::Button::Left) {
+                            bool res = false;
+
+                            if (up.getGlobalBounds().contains(mousePos)) {
+                                up.setColor(clicked);
+                                res = checkHit(1, ballsDir, ballsY, points, lives);
+                            } else if (down.getGlobalBounds().contains(mousePos)) {
+                                down.setColor(clicked);
+                                res = checkHit(2, ballsDir, ballsY, points, lives);
+                            } else if (left.getGlobalBounds().contains(mousePos)) {
+                                left.setColor(clicked);
+                                res = checkHit(3, ballsDir, ballsY, points, lives);
+                            } else if (right.getGlobalBounds().contains(mousePos)) {
+                                right.setColor(clicked);
+                                res = checkHit(4, ballsDir, ballsY, points, lives);
+                            }
+
+                            if (res) {
+                                userData.load();
+                                userData.save("totalPoints",
+                                              std::to_string(std::stoi(userData.get("totalPoints")) +
+                                                             std::stoi(points.getString().toAnsiString())));
+                                userData.file();
+                                points.setString("0");
+                                screen = screens::OVER;
+                            }
                         }
-
-                        if (res) {
-                            userData.load();
-                            userData.save("totalPoints", std::to_string(std::stoi(userData.get("totalPoints")) + std::stoi(points.getString().toAnsiString())));
-                            userData.file();
+                        break;
+                    case screens::OVER:
+                        if (replay.getGlobalBounds().contains(mousePos)) {
                             points.setString("0");
-                            screen = "OVER";
+                            screen = screens::GAME;
+                            lives = 3;
+                        } else if (quit.getGlobalBounds().contains(mousePos)) {
+                            window.close();
+                        } else if (menu.getGlobalBounds().contains(mousePos)) {
+                            screen = screens::MENU;
                         }
-                    }
-                } else if (screen == "OVER") {
-                    if (replay.getGlobalBounds().contains(mousePos)) {
-                        points.setString("0");
-                        screen = "GAME";
-                        lives = 3;
-                    } else if (quit.getGlobalBounds().contains(mousePos)) {
-                        window.close();
-                    } else if (menu.getGlobalBounds().contains(mousePos)) {
-                        screen = "MENU";
-                    }
-                } else if (screen == "MENU") {
-                    if (play.getGlobalBounds().contains(mousePos)) {
-                        screen = "GAME";
-                        lives = 3;
-                    } else if (shop.getGlobalBounds().contains(mousePos)) {
-                        screen = "SHOP";
-                   }
-                } else if (screen == "SHOP") {
-                    if (back.getGlobalBounds().contains(mousePos)) {
-                        screen = "MENU";
-                    }
+                        break;
+                    case screens::MENU:
+                        if (play.getGlobalBounds().contains(mousePos)) {
+                            screen = screens::GAME;
+                            lives = 3;
+                        } else if (shop.getGlobalBounds().contains(mousePos)) {
+                            screen = screens::SHOP;
+                        }
+                        break;
+                    case screens::SHOP:
+                        if (back.getGlobalBounds().contains(mousePos)) {
+                            screen = screens::MENU;
+                        }
+                        break;
                 }
+
             } else if (const auto* mouseRelease = event->getIf<sf::Event::MouseButtonReleased>()) {
                 if (mouseRelease->button == sf::Mouse::Button::Left) {
                     up.setColor(released);
@@ -210,63 +183,68 @@ int main() {
             }
         }
 
-        if (screen == "GAME") {
-            if (spawnClock.getElapsedTime().asSeconds() >= nextSpawnTime) {
-                ballsDir.push_back(dirDist(gen));
-                ballsX.push_back(xDist(gen));
-                ballsY.push_back(0.f);
+        switch (screen) {
+            case screens::GAME: {
+                if (spawnClock.getElapsedTime().asSeconds() >= nextSpawnTime) {
+                    ballsDir.push_back(dirDist(gen));
+                    ballsX.push_back(xDist(gen));
+                    ballsY.push_back(0.f);
 
-                spawnClock.restart();
-                nextSpawnTime = timeDist(gen);
-            }
-
-            window.clear();
-            window.draw(background);
-            window.draw(line);
-
-            for (size_t i = 0; i < ballsDir.size(); i++) {
-                if (ballsDir[i] == -1)
-                    continue;
-
-                ballSprite.setRotation(sf::degrees(getDir(ballsDir[i])));
-                ballSprite.setPosition({ballsX[i], ballsY[i]});
-                ballsY[i] += 10.f;
-
-                window.draw(ballSprite);
-            }
-
-            window.draw(up);
-            window.draw(down);
-            window.draw(right);
-            window.draw(left);
-            window.draw(points);
-
-            for (int i = 0; i < 3 ; i++) {
-                if (lives > i) {
-                    heart.setPosition({10.f + (i*120.f), 10.f});
-                    window.draw(heart);
-                    continue;
+                    spawnClock.restart();
+                    nextSpawnTime = timeDist(gen);
                 }
-                broken.setPosition({10.f + (i*120.f), 10.f});
-                window.draw(broken);
-            }
-        } else if (screen == "OVER") {
-            window.clear();
-            window.draw(background);
-            window.draw(gameover);
-            window.draw(replay);
-            window.draw(menu);
-            window.draw(quit);
-        } else if (screen == "MENU") {
-            window.clear();
-            window.draw(background);
-            window.draw(play);
-            window.draw(shop);
-        } else if (screen == "SHOP") {
-            window.clear();
-            window.draw(background);
-            window.draw(starterPackOffer);
-            window.draw(back);
+
+                window.clear();
+                window.draw(background);
+                window.draw(line);
+
+                for (size_t i = 0; i < ballsDir.size(); i++) {
+                    if (ballsDir[i] == -1)
+                        continue;
+
+                    ball.setRotation(sf::degrees(getDir(ballsDir[i])));
+                    ball.setPosition({ballsX[i], ballsY[i]});
+                    ballsY[i] += 10.f;
+
+                    window.draw(ball);
+                }
+
+                window.draw(up);
+                window.draw(down);
+                window.draw(right);
+                window.draw(left);
+                window.draw(points);
+
+                for (int i = 0; i < 3; i++) {
+                    if (lives > i) {
+                        heart.setPosition({10.f + (i * 120.f), 10.f});
+                        window.draw(heart);
+                        continue;
+                    }
+                    broken.setPosition({10.f + (i * 120.f), 10.f});
+                    window.draw(broken);
+                }
+            } break;
+            case screens::OVER: {
+                window.clear();
+                window.draw(background);
+                window.draw(gameover);
+                window.draw(replay);
+                window.draw(menu);
+                window.draw(quit);
+            } break;
+            case screens::MENU: {
+                window.clear();
+                window.draw(background);
+                window.draw(play);
+                window.draw(shop);
+            } break;
+            case screens::SHOP: {
+                window.clear();
+                window.draw(background);
+                window.draw(starterPackOffer);
+                window.draw(back);
+            } break;
         }
 
         window.display();

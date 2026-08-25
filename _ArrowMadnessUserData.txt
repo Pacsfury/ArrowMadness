@@ -1,0 +1,2 @@
+totalPoints:47;
+coins:0;
