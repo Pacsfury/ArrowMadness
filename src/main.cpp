@@ -5,11 +5,12 @@
 #include <random>
 #include <vector>
 
+#include "../include/coins.hpp"
 #include "../include/datakeeper.hpp"
 #include "../include/help.hpp"
 #include "../include/sprites.hpp"
 
-enum class screens : uint16_t { GAME, OVER, MENU, SHOP };
+enum class screens : uint16_t { GAME, OVER, MENU, SHOP, BOX };
 
 int main() {
     sf::RenderWindow window(sf::VideoMode({1920, 1080}), "Arrow Madness");
@@ -95,7 +96,8 @@ int main() {
     sf::Color released(255, 255, 255, 255);
 
     int lives = 3;
-    screens screen = screens::GAME;
+    int coins = 0;
+    screens screen = screens::MENU;
 
     std::vector<int> ballsDir = {1, 3};
     std::vector<float> ballsX = {130.f, 180.f};
@@ -169,6 +171,9 @@ int main() {
                     case screens::SHOP:
                         if (back.getGlobalBounds().contains(mousePos)) {
                             screen = screens::MENU;
+                        } else if (starterPackOffer.getGlobalBounds().contains(mousePos)) {
+                            auto coin_sprite = grantCoins(50, coins, userData);
+                            screen = screens::BOX;
                         }
                         break;
                 }
