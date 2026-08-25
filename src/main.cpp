@@ -28,19 +28,36 @@ int main() {
     sf::Texture arrowTexture;
     sf::Texture heartTexture;
     sf::Texture replayTexture;
+    sf::Texture menuTexture;
+    sf::Texture quitTexture;
+    sf::Texture brokenHeartTexture;
     heartTexture.loadFromFile("img/heart.png");
     arrowTexture.loadFromFile("img/arrow.png");
     replayTexture.loadFromFile("img/replay.png");
+    menuTexture.loadFromFile("img/menu.png");
+    quitTexture.loadFromFile("img/quit.png");
+    brokenHeartTexture.loadFromFile("img/brokenh.png");
+
     sf::Sprite up(arrowTexture);
     sf::Sprite down(arrowTexture);
     sf::Sprite right(arrowTexture);
     sf::Sprite left(arrowTexture);
     sf::Sprite heart(heartTexture);
     sf::Sprite replay(replayTexture);
+    sf::Sprite menu(menuTexture);
+    sf::Sprite quit(quitTexture);
+    sf::Sprite broken(brokenHeartTexture);
+
     sf::FloatRect rebounds = replay.getLocalBounds();
     replay.setOrigin({rebounds.size.x / 2.f, rebounds.size.y / 2.f});
-    replay.setPosition({960.f, 540.f});
-    replay.setScale({0.3, 0.3});
+    replay.setPosition({960.f, 360.f});
+    replay.setScale({0.25, 0.25});
+    menu.setOrigin({rebounds.size.x / 2.f, rebounds.size.y / 2.f});
+    menu.setPosition({960.f, 600.f});
+    menu.setScale({0.25, 0.25});
+    quit.setOrigin({rebounds.size.x / 2.f, rebounds.size.y / 2.f});
+    quit.setPosition({960.f, 840.f});
+    quit.setScale({0.25, 0.25});
 
     sf::FloatRect bounds = up.getLocalBounds();
 
@@ -60,7 +77,7 @@ int main() {
         gobounds.position.y + gobounds.size.y / 2.f
     });
 
-    gameover.setPosition({960.f, 300.f});
+    gameover.setPosition({960.f, 120.f});
 
     up.setOrigin({bounds.size.x / 2.f, bounds.size.y / 2.f});
     down.setOrigin({bounds.size.x / 2.f, bounds.size.y / 2.f});
@@ -134,6 +151,10 @@ int main() {
                     if (replay.getGlobalBounds().contains(mousePos)) {
                         screen = "GAME";
                         lives = 3;
+                    } else if (quit.getGlobalBounds().contains(mousePos)) {
+                        window.close();
+                    } else if (menu.getGlobalBounds().contains(mousePos)) {
+                        screen = "MENU";
                     }
                 }
             } else if (const auto* mouseRelease = event->getIf<sf::Event::MouseButtonReleased>()) {
@@ -177,14 +198,24 @@ int main() {
             window.draw(left);
             window.draw(points);
 
-            for (int i = 0; i < lives ; i++) {
-                heart.setPosition({10.f + (i*120.f), 10.f});
-                window.draw(heart);
+            for (int i = 0; i < 3 ; i++) {
+                if (lives > i) {
+                    heart.setPosition({10.f + (i*120.f), 10.f});
+                    window.draw(heart);
+                    continue;
+                }
+                broken.setPosition({10.f + (i*120.f), 10.f});
+                window.draw(broken);
             }
         } else if (screen == "OVER") {
+            window.clear();
             window.draw(background);
             window.draw(gameover);
             window.draw(replay);
+            window.draw(menu);
+            window.draw(quit);
+        } else if (screen == "MENU") {
+            window.clear();
         }
 
         window.display();
