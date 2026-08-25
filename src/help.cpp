@@ -20,7 +20,6 @@ bool checkHit(int targetDir, std::vector<int>& ballsDir, std::vector<float>& bal
     if (!hit) {
         lives -= 1;
         if (lives < 1) {
-            points.setString("0");
             return true;
         }
     }

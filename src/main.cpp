@@ -6,10 +6,15 @@
 #include <vector>
 
 #include "../include/help.hpp"
+#include "../include/datakeeper.hpp"
 
 int main() {
     sf::RenderWindow window(sf::VideoMode({1920, 1080}), "Arrow Madness");
     window.setVerticalSyncEnabled(true);
+
+    Table userData(1);
+    userData.save("totalPoints", userData.get("totalPoints") == "" ? "0" : userData.get("totalPoints"));
+    userData.save("coins", userData.get("coins") == "" ? "0" : userData.get("coins"));
 
     sf::Image icon;
     icon.loadFromFile("img/icon.png");
@@ -31,12 +36,20 @@ int main() {
     sf::Texture menuTexture;
     sf::Texture quitTexture;
     sf::Texture brokenHeartTexture;
+    sf::Texture playTexture;
+    sf::Texture shopTexture;
+    sf::Texture starterPackTexture;
+    sf::Texture backTexture;
     heartTexture.loadFromFile("img/heart.png");
     arrowTexture.loadFromFile("img/arrow.png");
     replayTexture.loadFromFile("img/replay.png");
     menuTexture.loadFromFile("img/menu.png");
     quitTexture.loadFromFile("img/quit.png");
+    playTexture.loadFromFile("img/play.png");
+    shopTexture.loadFromFile("img/shop.png");
     brokenHeartTexture.loadFromFile("img/brokenh.png");
+    starterPackTexture.loadFromFile("img/starter.png");
+    backTexture.loadFromFile("img/back.png");
 
     sf::Sprite up(arrowTexture);
     sf::Sprite down(arrowTexture);
@@ -47,6 +60,10 @@ int main() {
     sf::Sprite menu(menuTexture);
     sf::Sprite quit(quitTexture);
     sf::Sprite broken(brokenHeartTexture);
+    sf::Sprite play(playTexture);
+    sf::Sprite shop(shopTexture);
+    sf::Sprite starterPackOffer(starterPackTexture);
+    sf::Sprite back(backTexture);
 
     sf::FloatRect rebounds = replay.getLocalBounds();
     replay.setOrigin({rebounds.size.x / 2.f, rebounds.size.y / 2.f});
@@ -58,6 +75,16 @@ int main() {
     quit.setOrigin({rebounds.size.x / 2.f, rebounds.size.y / 2.f});
     quit.setPosition({960.f, 840.f});
     quit.setScale({0.25, 0.25});
+    play.setOrigin({rebounds.size.x / 2.f, rebounds.size.y / 2.f});
+    play.setPosition({1670.f, 870.f});
+    play.setScale({0.25, 0.25});
+    shop.setOrigin({rebounds.size.x / 2.f, rebounds.size.y / 2.f});
+    shop.setPosition({1670.f, 620.f});
+    shop.setScale({0.25, 0.25});
+    starterPackOffer.setScale({0.5, 0.5});
+    back.setOrigin({rebounds.size.x / 2.f, rebounds.size.y / 2.f});
+    back.setPosition({1670.f, 870.f});
+    back.setScale({0.25, 0.25});
 
     sf::FloatRect bounds = up.getLocalBounds();
 
@@ -144,16 +171,32 @@ int main() {
                         }
 
                         if (res) {
+                            userData.load();
+                            userData.save("totalPoints", std::to_string(std::stoi(userData.get("totalPoints")) + std::stoi(points.getString().toAnsiString())));
+                            userData.file();
+                            points.setString("0");
                             screen = "OVER";
                         }
                     }
                 } else if (screen == "OVER") {
                     if (replay.getGlobalBounds().contains(mousePos)) {
+                        points.setString("0");
                         screen = "GAME";
                         lives = 3;
                     } else if (quit.getGlobalBounds().contains(mousePos)) {
                         window.close();
                     } else if (menu.getGlobalBounds().contains(mousePos)) {
+                        screen = "MENU";
+                    }
+                } else if (screen == "MENU") {
+                    if (play.getGlobalBounds().contains(mousePos)) {
+                        screen = "GAME";
+                        lives = 3;
+                    } else if (shop.getGlobalBounds().contains(mousePos)) {
+                        screen = "SHOP";
+                   }
+                } else if (screen == "SHOP") {
+                    if (back.getGlobalBounds().contains(mousePos)) {
                         screen = "MENU";
                     }
                 }
@@ -216,6 +259,14 @@ int main() {
             window.draw(quit);
         } else if (screen == "MENU") {
             window.clear();
+            window.draw(background);
+            window.draw(play);
+            window.draw(shop);
+        } else if (screen == "SHOP") {
+            window.clear();
+            window.draw(background);
+            window.draw(starterPackOffer);
+            window.draw(back);
         }
 
         window.display();
