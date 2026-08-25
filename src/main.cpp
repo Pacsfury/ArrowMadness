@@ -10,7 +10,7 @@
 #include "../include/help.hpp"
 #include "../include/sprites.hpp"
 
-enum class screens : uint16_t { GAME, OVER, MENU, SHOP, BOX };
+enum class screens : uint16_t { GAME, OVER, MENU, SHOP, BOX, COIN };
 
 int main() {
     sf::RenderWindow window(sf::VideoMode({1920, 1080}), "Arrow Madness");
@@ -19,6 +19,8 @@ int main() {
     Table userData(1);
     userData.save("totalPoints", userData.get("totalPoints") == "" ? "0" : userData.get("totalPoints"));
     userData.save("coins", userData.get("coins") == "" ? "0" : userData.get("coins"));
+    userData.save("offers.starterpack.claimed", userData.get("offers.starterpack.claimed") == "1" ? "1" : "0");
+    userData.file();
 
     sf::Image icon;
     icon.loadFromFile("img/icon.png");
@@ -43,6 +45,7 @@ int main() {
     auto starterPackOffer = newSprite("img/starter.png", false);
     auto back = newSprite("img/back.png");
     auto ball = newSprite("img/ball.png", false);
+    auto boxscreen = newSprite("img/boxscreen.png", false);
 
     sf::FloatRect rebounds = replay.getLocalBounds();
     replay.setPosition({960.f, 360.f});
@@ -97,7 +100,7 @@ int main() {
 
     int lives = 3;
     int coins = 0;
-    screens screen = screens::MENU;
+    std::vector<screens> screenBuf = {screens::MENU};
 
     std::vector<int> ballsDir = {1, 3};
     std::vector<float> ballsX = {130.f, 180.f};
@@ -107,6 +110,9 @@ int main() {
     std::uniform_real_distribution<float> timeDist(0.5f, 3.0f);
     std::uniform_int_distribution<int> dirDist(1, 4);
     std::uniform_real_distribution<float> xDist(100.f, 1800.f);
+    std::uniform_int_distribution<int> randcoins(10, 60);
+
+    sf::Sprite coin_sprite = newSprite("img/coinreward.png");
 
     sf::Clock spawnClock;
     float nextSpawnTime = timeDist(gen);
@@ -119,7 +125,7 @@ int main() {
             } else if (const auto* mouseClick = event->getIf<sf::Event::MouseButtonPressed>()) {
                 sf::Vector2f mousePos = window.mapPixelToCoords(mouseClick->position);
 
-                switch (screen) {
+                switch (screenBuf.back()) {
                     case screens::GAME:
                         if (mouseClick->button == sf::Mouse::Button::Left) {
                             bool res = false;
@@ -145,35 +151,50 @@ int main() {
                                                              std::stoi(points.getString().toAnsiString())));
                                 userData.file();
                                 points.setString("0");
-                                screen = screens::OVER;
+                                screenBuf.back() = screens::OVER;
                             }
                         }
                         break;
                     case screens::OVER:
                         if (replay.getGlobalBounds().contains(mousePos)) {
                             points.setString("0");
-                            screen = screens::GAME;
+                            screenBuf.back() = screens::GAME;
                             lives = 3;
                         } else if (quit.getGlobalBounds().contains(mousePos)) {
                             window.close();
                         } else if (menu.getGlobalBounds().contains(mousePos)) {
-                            screen = screens::MENU;
+                            screenBuf.back() = screens::MENU;
                         }
                         break;
                     case screens::MENU:
                         if (play.getGlobalBounds().contains(mousePos)) {
-                            screen = screens::GAME;
+                            screenBuf.back() = screens::GAME;
                             lives = 3;
                         } else if (shop.getGlobalBounds().contains(mousePos)) {
-                            screen = screens::SHOP;
+                            screenBuf.push_back(screens::SHOP);
                         }
                         break;
                     case screens::SHOP:
                         if (back.getGlobalBounds().contains(mousePos)) {
-                            screen = screens::MENU;
+                            screenBuf.pop_back();
                         } else if (starterPackOffer.getGlobalBounds().contains(mousePos)) {
-                            auto coin_sprite = grantCoins(50, coins, userData);
-                            screen = screens::BOX;
+                            coin_sprite = grantCoins(50, coins, userData);
+                            screenBuf.push_back(screens::BOX);
+                            screenBuf.push_back(screens::COIN);
+                            userData.save("offers.starterpack.claimed", "1");
+                            userData.file();
+                        }
+                        break;
+                    case screens::BOX:
+                        if (boxscreen.getGlobalBounds().contains(mousePos)) {
+                            screenBuf.pop_back();
+                            coin_sprite = grantCoins(randcoins(gen), coins, userData);
+                            screenBuf.push_back(screens::COIN);
+                        }
+                        break;
+                    case screens::COIN:
+                        if (coin_sprite.getGlobalBounds().contains(mousePos)) {
+                            screenBuf.pop_back();
                         }
                         break;
                 }
@@ -188,7 +209,7 @@ int main() {
             }
         }
 
-        switch (screen) {
+        switch (screenBuf.back()) {
             case screens::GAME: {
                 if (spawnClock.getElapsedTime().asSeconds() >= nextSpawnTime) {
                     ballsDir.push_back(dirDist(gen));
@@ -247,9 +268,19 @@ int main() {
             case screens::SHOP: {
                 window.clear();
                 window.draw(background);
-                window.draw(starterPackOffer);
+                if (userData.get("offers.starterpack.claimed") == "0") {
+                    window.draw(starterPackOffer);
+                }
                 window.draw(back);
             } break;
+            case screens::COIN: {
+                window.clear();
+                window.draw(coin_sprite);
+            } break;
+            case screens::BOX: {
+                window.clear();
+                window.draw(boxscreen);
+            }
         }
 
         window.display();

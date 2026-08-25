@@ -1,0 +1,3 @@
+totalPoints:0;
+coins:51;
+offers.starterpack.claimed:1;
