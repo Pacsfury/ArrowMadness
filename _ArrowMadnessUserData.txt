@@ -1,4 +1,0 @@
-totalPoints:4;
-coins:50;
-username:Pacsfury;
-offers.starterpack.claimed:1;
