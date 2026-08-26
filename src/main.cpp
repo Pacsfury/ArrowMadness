@@ -51,6 +51,7 @@ int main() {
     auto ball = newSprite("img/ball.png", false);
     auto boxscreen = newSprite("img/boxscreen.png", false);
     auto coin = newSprite("img/coin.png", false);
+    auto free = newSprite("img/free.png", false);
 
     sf::FloatRect rebounds = replay.getLocalBounds();
     replay.setPosition({960.f, 360.f});
@@ -68,6 +69,8 @@ int main() {
     back.setScale({0.25, 0.25});
     coin.setScale({0.1, 0.1});
     coin.setPosition({1680.f, -22.f});
+    free.setScale({0.25, 0.25});
+    free.setPosition({1240.f, 390.f});
 
     sf::FloatRect bounds = up.getLocalBounds();
 
@@ -296,6 +299,9 @@ int main() {
                 window.draw(coin);
                 window.draw(usernameText);
                 window.draw(totalPointsText);
+                if (userData.get("offers.starterpack.claimed") != "1") {
+                    window.draw(free);
+                }
             } break;
             case screens::SHOP: {
                 coinCount.setString(userData.get("coins"));
