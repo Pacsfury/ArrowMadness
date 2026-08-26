@@ -23,6 +23,8 @@ int main() {
     userData.save("offers.starterpack.claimed", userData.get("offers.starterpack.claimed") == "1" ? "1" : "0");
     userData.file();
 
+    int coins = std::stoi(userData.get("coins"));
+
     sf::Image icon;
     icon.loadFromFile("img/icon.png");
     window.setIcon(icon);
@@ -47,6 +49,7 @@ int main() {
     auto back = newSprite("img/back.png");
     auto ball = newSprite("img/ball.png", false);
     auto boxscreen = newSprite("img/boxscreen.png", false);
+    auto coin = newSprite("img/coin.png", false);
 
     sf::FloatRect rebounds = replay.getLocalBounds();
     replay.setPosition({960.f, 360.f});
@@ -62,6 +65,8 @@ int main() {
     starterPackOffer.setScale({0.5, 0.5});
     back.setPosition({1670.f, 870.f});
     back.setScale({0.25, 0.25});
+    coin.setScale({0.1, 0.1});
+    coin.setPosition({1680.f, -22.f});
 
     sf::FloatRect bounds = up.getLocalBounds();
 
@@ -72,6 +77,9 @@ int main() {
     points.setString("0");
 
     sf::Text gameover(font);
+    sf::Text coinCount(font);
+    coinCount.setString(std::to_string(coins));
+    coinCount.setPosition({1800.f, 10.f});
     gameover.setString("Game Over!");
     gameover.setCharacterSize(160);
     sf::Text gotCoins(font);
@@ -103,7 +111,6 @@ int main() {
     sf::Color released(255, 255, 255, 255);
 
     int lives = 3;
-    int coins = std::stoi(userData.get("coins"));
     int coins_last;
     std::vector<screens> screenBuf = {screens::MENU};
 
@@ -270,18 +277,24 @@ int main() {
                 window.draw(quit);
             } break;
             case screens::MENU: {
+                coinCount.setString(userData.get("coins"));
                 window.clear();
                 window.draw(background);
                 window.draw(play);
                 window.draw(shop);
+                window.draw(coinCount);
+                window.draw(coin);
             } break;
             case screens::SHOP: {
+                coinCount.setString(userData.get("coins"));
                 window.clear();
                 window.draw(background);
                 if (userData.get("offers.starterpack.claimed") == "0") {
                     window.draw(starterPackOffer);
                 }
                 window.draw(back);
+                window.draw(coinCount);
+                window.draw(coin);
             } break;
             case screens::COIN: {
                 window.clear();
