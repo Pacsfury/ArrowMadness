@@ -4,10 +4,11 @@
 #include "../include/datakeeper.hpp"
 #include "../include/sprites.hpp"
 
-sf::Sprite grantCoins(int coins, int& count, Table table) {
+sf::Sprite grantCoins(int coins, int& count, Table& table) {
     count += coins;
-    table.save("coins", std::to_string(coins));
-    table.file();
+    
+    table.save("coins", std::to_string(count));
+    
     return newSprite("img/coinreward.png", false);
 }
 

@@ -17,6 +17,7 @@ int main() {
     window.setVerticalSyncEnabled(true);
 
     Table userData(1);
+    userData.load();
     userData.save("totalPoints", userData.get("totalPoints") == "" ? "0" : userData.get("totalPoints"));
     userData.save("coins", userData.get("coins") == "" ? "0" : userData.get("coins"));
     userData.save("offers.starterpack.claimed", userData.get("offers.starterpack.claimed") == "1" ? "1" : "0");
@@ -73,6 +74,9 @@ int main() {
     sf::Text gameover(font);
     gameover.setString("Game Over!");
     gameover.setCharacterSize(160);
+    sf::Text gotCoins(font);
+    gotCoins.setCharacterSize(160);
+    gotCoins.setPosition({960.f, 650.f});
     sf::FloatRect gobounds = gameover.getLocalBounds();
     gameover.setOrigin({gobounds.position.x + gobounds.size.x / 2.f, gobounds.position.y + gobounds.size.y / 2.f});
 
@@ -99,7 +103,8 @@ int main() {
     sf::Color released(255, 255, 255, 255);
 
     int lives = 3;
-    int coins = 0;
+    int coins = std::stoi(userData.get("coins"));
+    int coins_last;
     std::vector<screens> screenBuf = {screens::MENU};
 
     std::vector<int> ballsDir = {1, 3};
@@ -120,6 +125,7 @@ int main() {
     while (window.isOpen()) {
         while (const std::optional event = window.pollEvent()) {
             if (event->is<sf::Event::Closed>()) {
+                userData.file();
                 window.close();
 
             } else if (const auto* mouseClick = event->getIf<sf::Event::MouseButtonPressed>()) {
@@ -179,6 +185,7 @@ int main() {
                             screenBuf.pop_back();
                         } else if (starterPackOffer.getGlobalBounds().contains(mousePos)) {
                             coin_sprite = grantCoins(50, coins, userData);
+                            coins_last = 50;
                             screenBuf.push_back(screens::BOX);
                             screenBuf.push_back(screens::COIN);
                             userData.save("offers.starterpack.claimed", "1");
@@ -188,13 +195,16 @@ int main() {
                     case screens::BOX:
                         if (boxscreen.getGlobalBounds().contains(mousePos)) {
                             screenBuf.pop_back();
-                            coin_sprite = grantCoins(randcoins(gen), coins, userData);
+                            int given = randcoins(gen);
+                            coin_sprite = grantCoins(given, coins, userData);
+                            coins_last = given;
                             screenBuf.push_back(screens::COIN);
                         }
                         break;
                     case screens::COIN:
                         if (coin_sprite.getGlobalBounds().contains(mousePos)) {
                             screenBuf.pop_back();
+                            userData.save("coins", std::to_string(coins));
                         }
                         break;
                 }
@@ -275,7 +285,9 @@ int main() {
             } break;
             case screens::COIN: {
                 window.clear();
+                gotCoins.setString(std::to_string(coins_last));
                 window.draw(coin_sprite);
+                window.draw(gotCoins);
             } break;
             case screens::BOX: {
                 window.clear();
