@@ -21,6 +21,7 @@ int main() {
     userData.save("totalPoints", userData.get("totalPoints") == "" ? "0" : userData.get("totalPoints"));
     userData.save("coins", userData.get("coins") == "" ? "0" : userData.get("coins"));
     userData.save("offers.starterpack.claimed", userData.get("offers.starterpack.claimed") == "1" ? "1" : "0");
+    userData.save("username", userData.get("username") == "" ? "Guest" : userData.get("username"));
     userData.file();
 
     int coins = std::stoi(userData.get("coins"));
@@ -78,6 +79,14 @@ int main() {
 
     sf::Text gameover(font);
     sf::Text coinCount(font);
+    sf::Text usernameText(font);
+    sf::Text totalPointsText(font);
+    usernameText.setString(userData.get("username"));
+    usernameText.setPosition({150.f, 10.f});
+    usernameText.setCharacterSize(80);
+    totalPointsText.setString(userData.get("totalPoints"));
+    totalPointsText.setPosition({150.f, 100.f});
+    totalPointsText.setCharacterSize(40);
     coinCount.setString(std::to_string(coins));
     coinCount.setPosition({1800.f, 10.f});
     gameover.setString("Game Over!");
@@ -178,6 +187,7 @@ int main() {
                         } else if (menu.getGlobalBounds().contains(mousePos)) {
                             screenBuf.back() = screens::MENU;
                         }
+                        totalPointsText.setString(userData.get("totalPoints"));
                         break;
                     case screens::MENU:
                         if (play.getGlobalBounds().contains(mousePos)) {
@@ -284,6 +294,8 @@ int main() {
                 window.draw(shop);
                 window.draw(coinCount);
                 window.draw(coin);
+                window.draw(usernameText);
+                window.draw(totalPointsText);
             } break;
             case screens::SHOP: {
                 coinCount.setString(userData.get("coins"));
