@@ -129,6 +129,7 @@ int main() {
     std::vector<int> ballsDir = {1, 3};
     std::vector<float> ballsX = {130.f, 180.f};
     std::vector<float> ballsY = {400.f, 130.f};
+    std::vector<sf::Sprite> balls;
 
     std::mt19937 gen(static_cast<unsigned int>(std::time(nullptr)));
     std::uniform_real_distribution<float> timeDist(0.5f, 3.0f);
@@ -254,7 +255,7 @@ int main() {
                 window.draw(background);
                 window.draw(line);
 
-                std::vector<sf::Sprite> balls;
+                balls.clear();
 
                 for (size_t i = 0; i < ballsDir.size(); i++) {
                     if (ballsDir[i] == -1)
