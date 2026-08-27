@@ -6,9 +6,9 @@
 
 sf::Sprite grantCoins(int coins, int& count, Table& table) {
     count += coins;
-    
+
     table.save("coins", std::to_string(count));
-    
+
     return newSprite("img/coinreward.png", false);
 }
 

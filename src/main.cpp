@@ -253,6 +253,7 @@ int main() {
                 window.clear();
                 window.draw(background);
                 window.draw(line);
+
                 std::vector<sf::Sprite> balls;
 
                 for (size_t i = 0; i < ballsDir.size(); i++) {
@@ -265,7 +266,7 @@ int main() {
 
                     balls.push_back(ball);
                 }
-                
+
                 for (sf::Sprite ball : balls) {
                     window.draw(ball);
                 }
@@ -328,7 +329,7 @@ int main() {
             case screens::BOX: {
                 window.clear();
                 window.draw(boxscreen);
-            }
+            } break;
         }
 
         window.display();
