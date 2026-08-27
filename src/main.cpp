@@ -253,6 +253,7 @@ int main() {
                 window.clear();
                 window.draw(background);
                 window.draw(line);
+                std::vector<sf::Sprite> balls;
 
                 for (size_t i = 0; i < ballsDir.size(); i++) {
                     if (ballsDir[i] == -1)
@@ -262,6 +263,10 @@ int main() {
                     ball.setPosition({ballsX[i], ballsY[i]});
                     ballsY[i] += 10.f;
 
+                    balls.push_back(ball);
+                }
+                
+                for (sf::Sprite ball : balls) {
                     window.draw(ball);
                 }
 
