@@ -8,7 +8,8 @@
 
 static const inline std::unordered_map<std::string, std::string> CARDS = 
 {
-    "COMMON.livesplusone", "lives++"
+    {"COMMON.livesplusone", "lives++"},
+    {"SPECIAL.extrapoints", "extrapoints"}
 };
 
 

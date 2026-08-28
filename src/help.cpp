@@ -1,7 +1,9 @@
 #include <SFML/Graphics.hpp>
 #include <string>
 #include <vector>
+#include <cstdlib>
 
+#include "../include/cards.hpp"
 #include "../include/help.hpp"
 
 bool checkHit(int targetDir, std::vector<int>& ballsDir, std::vector<float>& ballsY, sf::Text& points, int& lives) {
@@ -11,7 +13,15 @@ bool checkHit(int targetDir, std::vector<int>& ballsDir, std::vector<float>& bal
         if (ballsDir[i] == targetDir && ballsY[i] > 390.f && ballsY[i] < 690.f) {
             ballsDir[i] = -1;
             int currentPoints = std::stoi(points.getString().toAnsiString());
-            points.setString(std::to_string(currentPoints + 1));
+            if (hasCard("SPECIAL.extrapoints")) {
+                if (std::rand() % 10 == 0) {
+                    points.setString(std::to_string(currentPoints + 3));
+                } else {
+                    points.setString(std::to_string(currentPoints + 1));
+                }
+            } else {
+                points.setString(std::to_string(currentPoints + 1));
+            }
             hit = true;
             break;
         }

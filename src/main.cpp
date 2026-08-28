@@ -4,13 +4,16 @@
 #include <iostream>
 #include <random>
 #include <vector>
+#include <filesystem>
 
 #include "../include/coins.hpp"
 #include "../include/datakeeper.hpp"
 #include "../include/help.hpp"
 #include "../include/sprites.hpp"
+#include "../include/cards.hpp"
 
-enum class screens : uint16_t { GAME, OVER, MENU, SHOP, BOX, COIN };
+enum class screens : uint16_t { GAME, OVER, MENU, SHOP, BOX, COIN, CARDS };
+namespace fs = std::filesystem;
 
 int main() {
     sf::RenderWindow window(sf::VideoMode({1920, 1080}), "Arrow Madness");
@@ -25,6 +28,9 @@ int main() {
     userData.file();
 
     int coins = std::stoi(userData.get("coins"));
+    int MAX_LIVES = 3;
+    std::vector<sf::Sprite> card_sprites;
+    std::vector<std::string> card_names;
 
     sf::Image icon;
     icon.loadFromFile("img/icon.png");
@@ -52,6 +58,26 @@ int main() {
     auto boxscreen = newSprite("img/boxscreen.png", false);
     auto coin = newSprite("img/coin.png", false);
     auto free = newSprite("img/free.png", false);
+    auto cardsbtn = newSprite("img/cards.png");
+
+    fs::path dir_path = "img/cards";
+
+    float card_x = 0.f;
+    if (fs::exists(dir_path) && fs::is_directory(dir_path)) {
+        for (const auto& entry : fs::directory_iterator(dir_path)) {
+            auto tempsprite = newSprite(entry.path().string(), false);
+            
+            std::string name = entry.path().stem().string(); 
+            
+            tempsprite.setScale({0.4, 0.4});
+            tempsprite.setPosition({card_x, 0.f});
+            
+            card_sprites.push_back(tempsprite);
+            card_names.push_back(name);
+            card_x += 400.f;
+        }   
+    }
+
 
     sf::FloatRect rebounds = replay.getLocalBounds();
     replay.setPosition({960.f, 360.f});
@@ -71,6 +97,8 @@ int main() {
     coin.setPosition({1680.f, -22.f});
     free.setScale({0.25, 0.25});
     free.setPosition({1240.f, 390.f});
+    cardsbtn.setScale({0.25, 0.25});
+    cardsbtn.setPosition({1670.f, 370.f});
 
     sf::FloatRect bounds = up.getLocalBounds();
 
@@ -136,6 +164,7 @@ int main() {
     std::uniform_int_distribution<int> dirDist(1, 4);
     std::uniform_real_distribution<float> xDist(100.f, 1800.f);
     std::uniform_int_distribution<int> randcoins(10, 60);
+    std::srand(std::time(nullptr));
 
     sf::Sprite coin_sprite = newSprite("img/coinreward.png");
 
@@ -196,9 +225,11 @@ int main() {
                     case screens::MENU:
                         if (play.getGlobalBounds().contains(mousePos)) {
                             screenBuf.back() = screens::GAME;
-                            lives = 3;
+                            lives = hasCard("COMMON.livesplusone") ? 4 : 3;
                         } else if (shop.getGlobalBounds().contains(mousePos)) {
                             screenBuf.push_back(screens::SHOP);
+                        } else if (cardsbtn.getGlobalBounds().contains(mousePos)) {
+                            screenBuf.push_back(screens::CARDS);
                         }
                         break;
                     case screens::SHOP:
@@ -228,6 +259,18 @@ int main() {
                             userData.save("coins", std::to_string(coins));
                         }
                         break;
+                    case screens::CARDS:
+                        if (back.getGlobalBounds().contains(mousePos)) {
+                            screenBuf.pop_back();
+                            screenBuf.push_back(screens::MENU);
+                        }
+                        size_t i = 0;
+                        for (sf::Sprite card : card_sprites) {
+                            if (card.getGlobalBounds().contains(mousePos)) {
+                                addCard(card_names[i]);
+                            }
+                            i++;
+                        }
                 }
 
             } else if (const auto* mouseRelease = event->getIf<sf::Event::MouseButtonReleased>()) {
@@ -242,6 +285,7 @@ int main() {
 
         switch (screenBuf.back()) {
             case screens::GAME: {
+                MAX_LIVES = hasCard("COMMON.livesplusone") ? 4 : 3;
                 if (spawnClock.getElapsedTime().asSeconds() >= nextSpawnTime) {
                     ballsDir.push_back(dirDist(gen));
                     ballsX.push_back(xDist(gen));
@@ -278,7 +322,7 @@ int main() {
                 window.draw(left);
                 window.draw(points);
 
-                for (int i = 0; i < 3; i++) {
+                for (int i = 0; i < MAX_LIVES; i++) {
                     if (lives > i) {
                         heart.setPosition({10.f + (i * 120.f), 10.f});
                         window.draw(heart);
@@ -306,6 +350,7 @@ int main() {
                 window.draw(coin);
                 window.draw(usernameText);
                 window.draw(totalPointsText);
+                window.draw(cardsbtn);
                 if (userData.get("offers.starterpack.claimed") != "1") {
                     window.draw(free);
                 }
@@ -330,6 +375,14 @@ int main() {
             case screens::BOX: {
                 window.clear();
                 window.draw(boxscreen);
+            } break;
+            case screens::CARDS: {
+                window.clear();
+                window.draw(background);
+                window.draw(back);
+                for (sf::Sprite card : card_sprites) {
+                    window.draw(card);
+                }
             } break;
         }
 
