@@ -1,16 +1,16 @@
 #include <SFML/Graphics.hpp>
 #include <algorithm>
 #include <ctime>
+#include <filesystem>
 #include <iostream>
 #include <random>
 #include <vector>
-#include <filesystem>
 
+#include "../include/cards.hpp"
 #include "../include/coins.hpp"
 #include "../include/datakeeper.hpp"
 #include "../include/help.hpp"
 #include "../include/sprites.hpp"
-#include "../include/cards.hpp"
 
 enum class screens : uint16_t { GAME, OVER, MENU, SHOP, BOX, COIN, CARDS };
 namespace fs = std::filesystem;
@@ -66,18 +66,17 @@ int main() {
     if (fs::exists(dir_path) && fs::is_directory(dir_path)) {
         for (const auto& entry : fs::directory_iterator(dir_path)) {
             auto tempsprite = newSprite(entry.path().string(), false);
-            
-            std::string name = entry.path().stem().string(); 
-            
+
+            std::string name = entry.path().stem().string();
+
             tempsprite.setScale({0.4, 0.4});
             tempsprite.setPosition({card_x, 0.f});
-            
+
             card_sprites.push_back(tempsprite);
             card_names.push_back(name);
             card_x += 400.f;
-        }   
+        }
     }
-
 
     sf::FloatRect rebounds = replay.getLocalBounds();
     replay.setPosition({960.f, 360.f});

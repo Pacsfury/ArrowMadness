@@ -1,8 +1,8 @@
-#include <vector>
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <unordered_map>
-#include <algorithm>
+#include <vector>
 
 struct Card {
     std::string name;

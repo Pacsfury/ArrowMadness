@@ -1,7 +1,7 @@
 #include <SFML/Graphics.hpp>
+#include <cstdlib>
 #include <string>
 #include <vector>
-#include <cstdlib>
 
 #include "../include/cards.hpp"
 #include "../include/help.hpp"
