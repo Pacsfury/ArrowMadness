@@ -12,7 +12,7 @@
 #include "../include/help.hpp"
 #include "../include/sprites.hpp"
 
-enum class screens : uint16_t { GAME, OVER, MENU, SHOP, BOX, COIN, CARDS };
+enum class screens : uint16_t { GAME, OVER, MENU, SHOP, BOX, COIN, CARDS, USER };
 namespace fs = std::filesystem;
 
 int main() {
@@ -25,7 +25,6 @@ int main() {
     userData.save("coins", userData.get("coins") == "" ? "0" : userData.get("coins"));
     userData.save("offers.starterpack.claimed", userData.get("offers.starterpack.claimed") == "1" ? "1" : "0");
     userData.save("username", userData.get("username") == "" ? "Guest" : userData.get("username"));
-    userData.file();
 
     int coins = std::stoi(userData.get("coins"));
     int MAX_LIVES = 3;
@@ -59,6 +58,7 @@ int main() {
     auto coin = newSprite("img/coin.png", false);
     auto free = newSprite("img/free.png", false);
     auto cardsbtn = newSprite("img/cards.png");
+    auto gear = newSprite("img/gear.png");
 
     fs::path dir_path = "img/cards";
 
@@ -66,7 +66,6 @@ int main() {
     if (fs::exists(dir_path) && fs::is_directory(dir_path)) {
         for (const auto& entry : fs::directory_iterator(dir_path)) {
             auto tempsprite = newSprite(entry.path().string(), false);
-
             std::string name = entry.path().stem().string();
 
             tempsprite.setScale({0.4, 0.4});
@@ -126,8 +125,9 @@ int main() {
     gotCoins.setPosition({960.f, 650.f});
     sf::FloatRect gobounds = gameover.getLocalBounds();
     gameover.setOrigin({gobounds.position.x + gobounds.size.x / 2.f, gobounds.position.y + gobounds.size.y / 2.f});
-
     gameover.setPosition({960.f, 120.f});
+    gear.setPosition({170.f, 190.f});
+    gear.setScale({0.1, 0.1});
 
     up.setOrigin({bounds.size.x / 2.f, bounds.size.y / 2.f});
     down.setOrigin({bounds.size.x / 2.f, bounds.size.y / 2.f});
@@ -170,12 +170,46 @@ int main() {
     sf::Clock spawnClock;
     float nextSpawnTime = timeDist(gen);
 
+    sf::String playerInput;
+    sf::Text visualText(font);
+    visualText.setCharacterSize(60);
+    visualText.setFillColor(sf::Color::White);
+    visualText.setPosition({100.f, 250.f});
+
+    sf::Text promptText(font);
+    promptText.setString("Enter Username:");
+    promptText.setCharacterSize(80);
+    promptText.setFillColor(sf::Color::Yellow);
+    promptText.setPosition({540.f, 120.f});
+
     while (window.isOpen()) {
         while (const std::optional event = window.pollEvent()) {
             if (event->is<sf::Event::Closed>()) {
                 userData.file();
                 window.close();
+            } else if (const auto* textEvent = event->getIf<sf::Event::TextEntered>()) {
+                if (screenBuf.back() == screens::USER) {
+                    char32_t unicodeValue = textEvent->unicode;
 
+                    if (unicodeValue == 8) {  // Backspace
+                        if (!playerInput.isEmpty()) {
+                            playerInput.erase(playerInput.getSize() - 1);
+                        }
+                    } else if (unicodeValue == 13 || unicodeValue == 10) {
+                        if (!playerInput.isEmpty()) {
+                            std::string newUsername = playerInput.toAnsiString();
+                            userData.save("username", newUsername);
+                            usernameText.setString(newUsername);
+                            screenBuf.back() = screens::MENU;
+                        }
+                    } else if (unicodeValue >= 32 && unicodeValue < 128) {
+                        if (playerInput.getSize() < 15) {
+                            playerInput += unicodeValue;
+                        }
+                    }
+
+                    visualText.setString(playerInput);
+                }
             } else if (const auto* mouseClick = event->getIf<sf::Event::MouseButtonPressed>()) {
                 sf::Vector2f mousePos = window.mapPixelToCoords(mouseClick->position);
 
@@ -203,7 +237,6 @@ int main() {
                                 userData.save("totalPoints",
                                               std::to_string(std::stoi(userData.get("totalPoints")) +
                                                              std::stoi(points.getString().toAnsiString())));
-                                userData.file();
                                 points.setString("0");
                                 screenBuf.back() = screens::OVER;
                             }
@@ -229,6 +262,8 @@ int main() {
                             screenBuf.push_back(screens::SHOP);
                         } else if (cardsbtn.getGlobalBounds().contains(mousePos)) {
                             screenBuf.push_back(screens::CARDS);
+                        } else if (gear.getGlobalBounds().contains(mousePos)) {
+                            screenBuf.push_back(screens::USER);
                         }
                         break;
                     case screens::SHOP:
@@ -240,7 +275,6 @@ int main() {
                             screenBuf.push_back(screens::BOX);
                             screenBuf.push_back(screens::COIN);
                             userData.save("offers.starterpack.claimed", "1");
-                            userData.file();
                         }
                         break;
                     case screens::BOX:
@@ -263,15 +297,26 @@ int main() {
                             screenBuf.pop_back();
                             screenBuf.push_back(screens::MENU);
                         }
-                        size_t i = 0;
-                        for (sf::Sprite card : card_sprites) {
-                            if (card.getGlobalBounds().contains(mousePos)) {
-                                addCard(card_names[i]);
+                        {
+                            size_t i = 0;
+                            for (sf::Sprite card : card_sprites) {
+                                if (card.getGlobalBounds().contains(mousePos)) {
+                                    addCard(card_names[i]);
+                                }
+                                i++;
                             }
-                            i++;
                         }
+                        break;
+                    case screens::USER:
+                        if (back.getGlobalBounds().contains(mousePos)) {
+                            screenBuf.pop_back();
+                            screenBuf.push_back(screens::MENU);
+                            std::string newUsername = playerInput.toAnsiString();
+                            userData.save("username", newUsername);
+                            usernameText.setString(newUsername);
+                        }
+                        break;
                 }
-
             } else if (const auto* mouseRelease = event->getIf<sf::Event::MouseButtonReleased>()) {
                 if (mouseRelease->button == sf::Mouse::Button::Left) {
                     up.setColor(released);
@@ -331,6 +376,7 @@ int main() {
                     window.draw(broken);
                 }
             } break;
+
             case screens::OVER: {
                 window.clear();
                 window.draw(background);
@@ -339,6 +385,7 @@ int main() {
                 window.draw(menu);
                 window.draw(quit);
             } break;
+
             case screens::MENU: {
                 coinCount.setString(userData.get("coins"));
                 window.clear();
@@ -350,10 +397,12 @@ int main() {
                 window.draw(usernameText);
                 window.draw(totalPointsText);
                 window.draw(cardsbtn);
+                window.draw(gear);
                 if (userData.get("offers.starterpack.claimed") != "1") {
                     window.draw(free);
                 }
             } break;
+
             case screens::SHOP: {
                 coinCount.setString(userData.get("coins"));
                 window.clear();
@@ -365,16 +414,19 @@ int main() {
                 window.draw(coinCount);
                 window.draw(coin);
             } break;
+
             case screens::COIN: {
                 window.clear();
                 gotCoins.setString(std::to_string(coins_last));
                 window.draw(coin_sprite);
                 window.draw(gotCoins);
             } break;
+
             case screens::BOX: {
                 window.clear();
                 window.draw(boxscreen);
             } break;
+
             case screens::CARDS: {
                 window.clear();
                 window.draw(background);
@@ -382,6 +434,14 @@ int main() {
                 for (sf::Sprite card : card_sprites) {
                     window.draw(card);
                 }
+            } break;
+
+            case screens::USER: {
+                window.clear();
+                window.draw(background);
+                window.draw(promptText);
+                window.draw(visualText);
+                window.draw(back);
             } break;
         }
 
