@@ -37,9 +37,7 @@ bool checkHit(int targetDir, std::vector<int>& ballsDir, std::vector<float>& bal
 }
 
 float getDir(int currDir) {
-    if (currDir == 1) {
-        return 0.f;
-    } else if (currDir == 2) {
+    if (currDir == 2) {
         return 180.f;
     } else if (currDir == 3) {
         return 90.f;
