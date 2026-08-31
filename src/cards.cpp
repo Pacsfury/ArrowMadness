@@ -30,9 +30,5 @@ bool hasCard(std::string name) {
         return card == name;
     });
 
-    if (it != deck.end()) {
-        return true;
-    } else {
-        return false;
-    }
+    return false;
 }
