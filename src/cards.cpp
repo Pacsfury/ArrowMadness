@@ -20,7 +20,5 @@ void addCard(std::string name) {
 }
 
 bool hasCard(std::string name) {
-    auto it = std::find_if(deck.begin(), deck.end(), [&name](const std::string& card) { return card == name; });
-
-    return false;
+    return std::find(deck.begin(), deck.end(), name) != deck.end();
 }
