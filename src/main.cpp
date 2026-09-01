@@ -12,12 +12,16 @@
 #include "../include/help.hpp"
 #include "../include/sprites.hpp"
 
-enum class screens : uint16_t { GAME, OVER, MENU, SHOP, BOX, COIN, CARDS, USER };
+enum class screens : uint16_t { GAME, OVER, MENU, SHOP, BOX, COIN, CARDS, USER, LOAD };
 namespace fs = std::filesystem;
 
 int main() {
     sf::RenderWindow window(sf::VideoMode({1920, 1080}), "Arrow Madness");
     window.setVerticalSyncEnabled(true);
+    auto loading = newSprite("img/loading.png", false);
+    window.draw(loading);
+    window.display();
+    std::vector<screens> screenBuf = {screens::LOAD};
 
     Table userData(1);
     userData.load();
@@ -151,7 +155,6 @@ int main() {
 
     int lives = 3;
     int coins_last;
-    std::vector<screens> screenBuf = {screens::MENU};
 
     std::vector<int> ballsDir = {1, 3};
     std::vector<float> ballsX = {130.f, 180.f};
@@ -181,6 +184,8 @@ int main() {
     promptText.setCharacterSize(80);
     promptText.setFillColor(sf::Color::Yellow);
     promptText.setPosition({540.f, 120.f});
+
+    screenBuf = {screens::MENU};
 
     while (window.isOpen()) {
         while (const std::optional event = window.pollEvent()) {
