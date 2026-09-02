@@ -22,10 +22,7 @@ bool checkHit(int targetDir, std::vector<int>& ballsDir, std::vector<float>& bal
 }
 
 float getDir(int currDir) {
-    switch (currDir) {
-        case 2:  return 180.f;
-        case 3:  return 90.f;
-        case 4:  return -90.f;
-        default: return 0.f;
-    }
+    static const float dirs[] = {0.f, 0.f, 180.f, 90.f, -90.f};
+    return (currDir >= 0 && currDir <= 4) ? dirs[currDir] : 0.f;
 }
+
