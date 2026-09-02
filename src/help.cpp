@@ -13,23 +13,13 @@ bool checkHit(int targetDir, std::vector<int>& ballsDir, std::vector<float>& bal
         if (ballsDir[i] == targetDir && ballsY[i] > 390.f && ballsY[i] < 690.f) {
             ballsDir[i] = -1;
             int currentPoints = std::stoi(points.getString().toAnsiString());
-            if (std::rand() % 10 == 0 && hasCard("SPECIAL.extrapoints")) {
-                points.setString(std::to_string(currentPoints + 3));
-            } else {
-                points.setString(std::to_string(currentPoints + 1));
-            }
+            points.setString(std::to_string(currentPoints + (std::rand() % 10 == 0 && hasCard("SPECIAL.extrapoints") ? 3 : 1)));
             hit = true;
             break;
         }
     }
 
-    if (!hit) {
-        lives -= 1;
-        if (lives < 1) {
-            return true;
-        }
-    }
-    return false;
+    return !hit && --lives < 1;
 }
 
 float getDir(int currDir) {
