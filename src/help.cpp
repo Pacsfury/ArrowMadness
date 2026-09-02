@@ -1,5 +1,4 @@
 #include <SFML/Graphics.hpp>
-#include <cstdlib>
 #include <string>
 #include <vector>
 
@@ -23,12 +22,10 @@ bool checkHit(int targetDir, std::vector<int>& ballsDir, std::vector<float>& bal
 }
 
 float getDir(int currDir) {
-    if (currDir == 2) {
-        return 180.f;
-    } else if (currDir == 3) {
-        return 90.f;
-    } else if (currDir == 4) {
-        return -90.f;
+    switch (currDir) {
+        case 2:  return 180.f;
+        case 3:  return 90.f;
+        case 4:  return -90.f;
+        default: return 0.f;
     }
-    return 0.f;
 }
