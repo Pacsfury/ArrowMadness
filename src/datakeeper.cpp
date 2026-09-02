@@ -7,13 +7,12 @@
 #include "../include/datakeeper.hpp"
 
 void Table::save(std::string K, std::string V) { KV[K] = V; }
+
 std::string Table::get(std::string K) {
     auto it = KV.find(K);
-    if (it != KV.end()) {
-        return it->second;
-    }
-    return "";
+    return it != KV.end() ? it->second : "";
 }
+
 Table::Table(int id) { this->id = id; }
 
 void Table::file() {
@@ -38,10 +37,8 @@ void Table::load() {
         std::string Kbuf;
         std::string Vbuf;
 
-        if (std::getline(ss, Kbuf, ':')) {
-            if (std::getline(ss, Vbuf, ';')) {
-                this->KV[Kbuf] = Vbuf;
-            }
+        if (std::getline(ss, Kbuf, ':') && std::getline(ss, Vbuf, ';')) {
+            this->KV[Kbuf] = Vbuf;
         }
     }
 }
