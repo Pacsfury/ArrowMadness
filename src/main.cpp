@@ -63,6 +63,7 @@ int main() {
     auto free = newSprite("img/free.png", false);
     auto cardsbtn = newSprite("img/cards.png");
     auto gear = newSprite("img/gear.png");
+    auto coinball = newSprite("img/coinball.png");
 
     fs::path dir_path = "img/cards";
 
@@ -70,7 +71,8 @@ int main() {
     if (fs::exists(dir_path) && fs::is_directory(dir_path)) {
         for (const auto& entry : fs::directory_iterator(dir_path)) {
             auto tempsprite = newSprite(entry.path().string(), false);
-            std::string name = entry.path().stem().string();
+
+            std::string name = entry.path().stem().string().substr(1);
 
             tempsprite.setScale({0.4, 0.4});
             tempsprite.setPosition({card_x, 0.f});
@@ -239,6 +241,9 @@ int main() {
 
                             if (res) {
                                 userData.load();
+                                grantCoins(getCoinsToAdd(), coins, userData);
+                                resetCoinsToAdd();
+
                                 userData.save("totalPoints",
                                               std::to_string(std::stoi(userData.get("totalPoints")) +
                                                              std::stoi(points.getString().toAnsiString())));
@@ -261,6 +266,7 @@ int main() {
                         break;
                     case screens::MENU:
                         if (play.getGlobalBounds().contains(mousePos)) {
+                            resetCoinsToAdd();
                             screenBuf.back() = screens::GAME;
                             lives = hasCard("COMMON.livesplusone") ? 4 : 3;
                         } else if (shop.getGlobalBounds().contains(mousePos)) {
@@ -342,6 +348,12 @@ int main() {
 
                     spawnClock.restart();
                     nextSpawnTime = timeDist(gen);
+
+                    if (hasCard("MYTHIC.coinballs") && std::rand() % 10 < 2) {
+                        ballsDir.push_back(5);
+                        ballsX.push_back(xDist(gen));
+                        ballsY.push_back(0.f);
+                    }
                 }
 
                 window.clear();
@@ -353,6 +365,13 @@ int main() {
                 for (size_t i = 0; i < ballsDir.size(); i++) {
                     if (ballsDir[i] == -1)
                         continue;
+
+                    if (ballsDir[i] == 5) {
+                        ball = newSprite("img/coinball.png");
+                        ball.setScale({0.5, 0.5});
+                    } else {
+                        ball = newSprite("img/ball.png", false);
+                    }
 
                     ball.setRotation(sf::degrees(getDir(ballsDir[i])));
                     ball.setPosition({ballsX[i], ballsY[i]});

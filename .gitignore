@@ -1,5 +1,5 @@
 *.pdb
-cmd
+cmd.bat
 *.obj
 *.dll
 *.exe

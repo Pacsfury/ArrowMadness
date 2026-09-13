@@ -5,3 +5,7 @@
 bool checkHit(int targetDir, std::vector<int>& ballsDir, std::vector<float>& ballsY, sf::Text& points, int& lives);
 
 float getDir(int currDir);
+
+int getCoinsToAdd();
+
+void resetCoinsToAdd();

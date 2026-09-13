@@ -5,7 +5,7 @@
 
 #include "../include/cards.hpp"
 
-static const inline std::vector<std::string> CARDS = {"COMMON.livesplusone", "SPECIAL.extrapoints"};
+static const inline std::vector<std::string> CARDS = {"COMMON.livesplusone", "SPECIAL.extrapoints", "MYTHIC.coinball"};
 
 std::vector<std::string> deck;
 

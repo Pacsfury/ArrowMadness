@@ -5,14 +5,19 @@
 #include "../include/cards.hpp"
 #include "../include/help.hpp"
 
+int coinstoadd = 0;
+
 bool checkHit(int targetDir, std::vector<int>& ballsDir, std::vector<float>& ballsY, sf::Text& points, int& lives) {
     bool hit = false;
 
     for (size_t i = 0; i < ballsDir.size(); ++i) {
-        if (ballsDir[i] == targetDir && ballsY[i] > 390.f && ballsY[i] < 690.f) {
+        if ((ballsDir[i] == targetDir || ballsDir[i] == 5) && ballsY[i] >= 390.f && ballsY[i] <= 690.f) {
+            if (ballsDir[i] == 5)
+                coinstoadd += 20;
             ballsDir[i] = -1;
             int currentPoints = std::stoi(points.getString().toAnsiString());
-            points.setString(std::to_string(currentPoints + (std::rand() % 10 == 0 && hasCard("SPECIAL.extrapoints") ? 3 : 1)));
+            points.setString(
+                std::to_string(currentPoints + (std::rand() % 10 == 0 && hasCard("SPECIAL.extrapoints") ? 3 : 1)));
             hit = true;
             break;
         }
@@ -26,3 +31,6 @@ float getDir(int currDir) {
     return (currDir >= 0 && currDir <= 4) ? dirs[currDir] : 0.f;
 }
 
+int getCoinsToAdd() { return coinstoadd; }
+
+void resetCoinsToAdd() { coinstoadd = 0; }
