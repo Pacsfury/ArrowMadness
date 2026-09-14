@@ -69,10 +69,15 @@ int main() {
 
     float card_x = 0.f;
     if (fs::exists(dir_path) && fs::is_directory(dir_path)) {
+        std::vector<fs::path> entries;
         for (const auto& entry : fs::directory_iterator(dir_path)) {
-            auto tempsprite = newSprite(entry.path().string(), false);
+            entries.push_back(entry.path());
+        }
+        std::sort(entries.begin(), entries.end());
+        for (const auto& entry : entries) {
+            auto tempsprite = newSprite(entry.string(), false);
 
-            std::string name = entry.path().stem().string().substr(1);
+            std::string name = entry.stem().string().substr(1);
 
             tempsprite.setScale({0.4, 0.4});
             tempsprite.setPosition({card_x, 0.f});
@@ -162,6 +167,7 @@ int main() {
     std::vector<float> ballsX = {130.f, 180.f};
     std::vector<float> ballsY = {400.f, 130.f};
     std::vector<sf::Sprite> balls;
+    std::vector<sf::Sprite> sprite_deck;
 
     std::mt19937 gen(static_cast<unsigned int>(std::time(nullptr)));
     std::uniform_real_distribution<float> timeDist(0.5f, 3.0f);
@@ -272,6 +278,7 @@ int main() {
                         } else if (shop.getGlobalBounds().contains(mousePos)) {
                             screenBuf.push_back(screens::SHOP);
                         } else if (cardsbtn.getGlobalBounds().contains(mousePos)) {
+                            sprite_deck = getDeckSprites();
                             screenBuf.push_back(screens::CARDS);
                         } else if (gear.getGlobalBounds().contains(mousePos)) {
                             screenBuf.push_back(screens::USER);
@@ -313,6 +320,8 @@ int main() {
                             for (sf::Sprite card : card_sprites) {
                                 if (card.getGlobalBounds().contains(mousePos)) {
                                     addCard(card_names[i]);
+                                    sprite_deck = getDeckSprites();
+                                    break;
                                 }
                                 i++;
                             }
@@ -457,6 +466,9 @@ int main() {
                 window.draw(back);
                 for (sf::Sprite card : card_sprites) {
                     window.draw(card);
+                }
+                for (sf::Sprite c : sprite_deck) {
+                    window.draw(c);
                 }
             } break;
 

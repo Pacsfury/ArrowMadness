@@ -5,7 +5,7 @@
 
 #include "../include/cards.hpp"
 
-static const inline std::vector<std::string> CARDS = {"COMMON.livesplusone", "SPECIAL.extrapoints", "MYTHIC.coinball"};
+static const inline std::vector<std::string> CARDS = {"COMMON.livesplusone", "SPECIAL.extrapoints", "MYTHIC.coinballs"};
 
 std::vector<std::string> deck;
 
@@ -13,10 +13,8 @@ void addCard(std::string card) {
     if (deck.size() < 4) {
         deck.push_back(card);
     } else {
-        deck[2] = card;
+        deck.back() = card;
     }
 }
 
-bool hasCard(std::string name) {
-    return std::find(deck.begin(), deck.end(), name) != deck.end();
-}
+bool hasCard(std::string name) { return std::find(deck.begin(), deck.end(), name) != deck.end(); }
