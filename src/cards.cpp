@@ -10,7 +10,7 @@ static const inline std::vector<std::string> CARDS = {"COMMON.livesplusone", "SP
 std::vector<std::string> deck;
 
 void addCard(std::string card) {
-    if (deck.size() < 4) {
+    if (deck.size() < 3) {
         deck.push_back(card);
     } else {
         deck.back() = card;
