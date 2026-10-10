@@ -1,18 +1,23 @@
 #include <SFML/Graphics.hpp>
 #include <algorithm>
+#include <charconv>
 #include <ctime>
 #include <filesystem>
 #include <iostream>
 #include <random>
+#include <string>
 #include <vector>
 
 #include "../include/cards.hpp"
 #include "../include/coins.hpp"
 #include "../include/datakeeper.hpp"
 #include "../include/help.hpp"
+#include "../include/onlinerooms.hpp"
 #include "../include/sprites.hpp"
 
-enum class screens : uint16_t { GAME, OVER, MENU, SHOP, BOX, COIN, CARDS, USER, LOAD };
+enum class screens : uint16_t {
+    GAME, OVER, MENU, SHOP, BOX, COIN, CARDS, USER, LOAD, RANK, LEADERBOARD
+};
 namespace fs = std::filesystem;
 
 int main() {
@@ -64,6 +69,8 @@ int main() {
     auto cardsbtn = newSprite("img/cards.png");
     auto gear = newSprite("img/gear.png");
     auto coinball = newSprite("img/coinball.png");
+    auto rankbtn = newSprite("img/rank.png");
+    auto join = newSprite("img/join.png");
 
     fs::path dir_path = "img/cards";
 
@@ -108,10 +115,14 @@ int main() {
     free.setPosition({1240.f, 390.f});
     cardsbtn.setScale({0.25, 0.25});
     cardsbtn.setPosition({1670.f, 370.f});
+    rankbtn.setPosition({1220.f, 870.f});
+    rankbtn.setScale({0.25, 0.25});
+    join.setPosition({1670.f, 620.f});
+    join.setScale({0.25, 0.25});
 
     sf::FloatRect bounds = up.getLocalBounds();
 
-    sf::Font font("fonts/Super Bouncer.ttf");
+    static const sf::Font font("fonts/Super Bouncer.ttf");
     sf::Text points(font);
     points.setPosition({960.f, 0.f});
     points.setCharacterSize(90);
@@ -187,11 +198,83 @@ int main() {
     visualText.setFillColor(sf::Color::White);
     visualText.setPosition({100.f, 250.f});
 
+    sf::Text rankResult(font);
+    rankResult.setCharacterSize(36);
+    rankResult.setFillColor(sf::Color::White);
+    rankResult.setPosition({100.f, 350.f});
+
     sf::Text promptText(font);
     promptText.setString("Enter Username:");
     promptText.setCharacterSize(80);
     promptText.setFillColor(sf::Color::Yellow);
     promptText.setPosition({540.f, 120.f});
+
+    const auto formatLeaderboard = [](const std::string& response) {
+        if (response.rfind("ERROR", 0) == 0 || response.rfind("Connection failed", 0) == 0) {
+            return std::string("Joined room, but could not load leaderboard:\n") + response;
+        }
+
+        std::string leaderboard = "Leaderboard\n\n";
+        size_t entryStart = response.find("\"pos\":");
+        if (entryStart == std::string::npos) {
+            return std::string("The server returned an invalid leaderboard.");
+        }
+
+        while (entryStart != std::string::npos) {
+            const size_t positionEnd = response.find(',', entryStart);
+            const size_t nameKey = response.find("\"name\":\"", positionEnd);
+            if (positionEnd == std::string::npos || nameKey == std::string::npos) {
+                return std::string("The server returned an invalid leaderboard.");
+            }
+
+            const size_t nameStart = nameKey + 8;
+            const size_t nameEnd = response.find('"', nameStart);
+            const size_t scoreKey = response.find("\"score\":", nameEnd);
+            if (nameEnd == std::string::npos || scoreKey == std::string::npos) {
+                return std::string("The server returned an invalid leaderboard.");
+            }
+
+            const size_t scoreStart = scoreKey + 8;
+            const size_t scoreEnd = response.find('}', scoreStart);
+            if (scoreEnd == std::string::npos) {
+                return std::string("The server returned an invalid leaderboard.");
+            }
+
+            leaderboard += response.substr(entryStart + 6, positionEnd - entryStart - 6) +
+                           ". " + response.substr(nameStart, nameEnd - nameStart) + " - " +
+                           response.substr(scoreStart, scoreEnd - scoreStart) + " points\n";
+            entryStart = response.find("\"pos\":", scoreEnd);
+        }
+        return leaderboard;
+    };
+
+    const auto joinRoom = [&]() {
+        const std::string roomId = visualText.getString().toAnsiString();
+        if (roomId.empty() || roomId.size() > 15 ||
+            !std::all_of(roomId.begin(), roomId.end(), [](unsigned char character) {
+                return std::isalnum(character) || character == '-' || character == '_';
+            })) {
+            rankResult.setString("Enter a room ID using letters, numbers, - or _.");
+            return;
+        }
+
+        const std::string totalPoints = userData.get("totalPoints");
+        int score = 0;
+        const auto [end, error] =
+            std::from_chars(totalPoints.data(), totalPoints.data() + totalPoints.size(), score);
+        if (error != std::errc{} || end != totalPoints.data() + totalPoints.size()) {
+            rankResult.setString("Your saved score is invalid; could not join the room.");
+            return;
+        }
+
+        if (!createRoom(userData.get("username"), roomId, score)) {
+            rankResult.setString("Could not join room. Check that the server is running on port 8080.");
+            return;
+        }
+
+        rankResult.setString(formatLeaderboard(getRanking(roomId)));
+        screenBuf.back() = screens::LEADERBOARD;
+    };
 
     screenBuf = {screens::MENU};
 
@@ -202,6 +285,24 @@ int main() {
                 window.close();
             } else if (const auto* textEvent = event->getIf<sf::Event::TextEntered>()) {
                 if (screenBuf.back() == screens::USER) {
+                    char32_t unicodeValue = textEvent->unicode;
+
+                    if (unicodeValue == 8) {  // Backspace
+                        if (!playerInput.isEmpty()) {
+                            playerInput.erase(playerInput.getSize() - 1);
+                        }
+                    } else if (unicodeValue == 13 || unicodeValue == 10) {
+                        if (!playerInput.isEmpty()) {
+                            joinRoom();
+                        }
+                    } else if (unicodeValue >= 32 && unicodeValue < 128) {
+                        if (playerInput.getSize() < 15) {
+                            playerInput += unicodeValue;
+                        }
+                    }
+
+                    visualText.setString(playerInput);
+                } else if (screenBuf.back() == screens::RANK) {
                     char32_t unicodeValue = textEvent->unicode;
 
                     if (unicodeValue == 8) {  // Backspace
@@ -282,6 +383,8 @@ int main() {
                             screenBuf.push_back(screens::CARDS);
                         } else if (gear.getGlobalBounds().contains(mousePos)) {
                             screenBuf.push_back(screens::USER);
+                        } else if (rankbtn.getGlobalBounds().contains(mousePos)) {
+                            screenBuf.back() = screens::RANK;
                         }
                         break;
                     case screens::SHOP:
@@ -334,6 +437,19 @@ int main() {
                             std::string newUsername = playerInput.toAnsiString();
                             userData.save("username", newUsername);
                             usernameText.setString(newUsername);
+                        }
+                        break;
+
+                    case screens::RANK:
+                        if (back.getGlobalBounds().contains(mousePos)) {
+                            screenBuf.back() = screens::MENU;
+                        } else if (join.getGlobalBounds().contains(mousePos)) {
+                            joinRoom();
+                        }
+                        break;
+                    case screens::LEADERBOARD:
+                        if (back.getGlobalBounds().contains(mousePos)) {
+                            screenBuf.back() = screens::MENU;
                         }
                         break;
                 }
@@ -431,6 +547,7 @@ int main() {
                 window.draw(totalPointsText);
                 window.draw(cardsbtn);
                 window.draw(gear);
+                window.draw(rankbtn);
                 if (userData.get("offers.starterpack.claimed") != "1") {
                     window.draw(free);
                 }
@@ -474,9 +591,32 @@ int main() {
 
             case screens::USER: {
                 window.clear();
+                promptText.setString("Enter Username:");
                 window.draw(background);
                 window.draw(promptText);
                 window.draw(visualText);
+                window.draw(back);
+            } break;
+
+            case screens::RANK: {
+                window.clear();
+                window.draw(background);
+                window.draw(coinCount);
+                window.draw(coin);
+                window.draw(usernameText);
+                window.draw(totalPointsText);
+                window.draw(join);
+                window.draw(back);
+                promptText.setString("Enter code:");
+                window.draw(promptText);
+                window.draw(visualText);
+                window.draw(rankResult);
+            } break;
+
+            case screens::LEADERBOARD: {
+                window.clear();
+                window.draw(background);
+                window.draw(rankResult);
                 window.draw(back);
             } break;
         }
