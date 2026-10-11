@@ -8,13 +8,14 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Main {
 
-    private static final Map<String, List<PlayerResult>> rooms = new HashMap<>();
+    private static final Map<String, List<PlayerResult>> rooms = new ConcurrentHashMap<>();
 
     public static void main(String[] args) throws IOException {
         int port = 8080;
@@ -30,7 +31,7 @@ public class Main {
         System.out.println("Server working...");
     }
 
-    static class ExitHandler implements  HttpHandler {
+    static class ExitHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
@@ -38,16 +39,7 @@ public class Main {
                 return;
             }
 
-            InputStream is = exchange.getRequestBody();
-            ByteArrayOutputStream bodyBytes = new ByteArrayOutputStream();
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-            while ((bytesRead = is.read(buffer)) != -1) {
-                bodyBytes.write(buffer, 0, bytesRead);
-            }
-            is.close();
-
-            String body = new String(bodyBytes.toByteArray(), StandardCharsets.UTF_8);
+            String body = readBody(exchange);
             try {
                 String name = extractJsonValue(body, "name");
                 String roomId = extractJsonValue(body, "roomId");
@@ -57,10 +49,17 @@ public class Main {
                     sendResponse(exchange, "{\"error\":\"name and roomId are required\"}", "application/json", 400);
                 } else if (players == null) {
                     sendResponse(exchange, "{\"error\":\"room not found\"}", "application/json", 404);
-                } else if (!players.removeIf(player -> player.name.equals(name))) {
-                    sendResponse(exchange, "{\"error\":\"user not found in room\"}", "application/json", 404);
                 } else {
-                    sendResponse(exchange, "{\"status\":\"success\"}", "application/json", 200);
+                    boolean removed;
+                    synchronized (players) {
+                        removed = players.removeIf(player -> player.name.equals(name));
+                    }
+                    
+                    if (!removed) {
+                        sendResponse(exchange, "{\"error\":\"user not found in room\"}", "application/json", 404);
+                    } else {
+                        sendResponse(exchange, "{\"status\":\"success\"}", "application/json", 200);
+                    }
                 }
             } catch (Exception e) {
                 sendResponse(exchange, "{\"error\":\"invalid json\"}", "application/json", 400);
@@ -78,35 +77,29 @@ public class Main {
     static class NewRoomHandler implements HttpHandler {
         @Override 
         public void handle(HttpExchange exchange) throws IOException {
-        if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
-                InputStream is = exchange.getRequestBody();
-                ByteArrayOutputStream bodyBytes = new ByteArrayOutputStream();
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-                while ((bytesRead = is.read(buffer)) != -1) {
-                    bodyBytes.write(buffer, 0, bytesRead);
-                }
-                String body = new String(bodyBytes.toByteArray(), StandardCharsets.UTF_8);
-                is.close();
-
-                try {
-                    String name = extractJsonValue(body, "name");
-                    String roomId = extractJsonValue(body, "roomId");
-                    int score = Integer.parseInt(extractJsonValue(body, "score"));
-
-                    rooms.putIfAbsent(roomId, new ArrayList<>());
-                    
-                    rooms.get(roomId).add(new PlayerResult(name, score));
-
-                    System.out.println("[" + roomId + "] " + name + " made " + score + " points.");
-
-                    String response = "{\"status\":\"success\",\"message\":\"Added to room " + roomId + "\"}";
-                    sendResponse(exchange, response, "application/json", 200);
-                } catch (Exception e) {
-                    sendResponse(exchange, "{\"error\":\"invalid json\"}", "application/json", 400);
-                }
-            } else {
+            if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
                 sendResponse(exchange, "Unvalid method", "text/plain", 405);
+                return;
+            }
+
+            String body = readBody(exchange);
+            try {
+                String name = extractJsonValue(body, "name");
+                String roomId = extractJsonValue(body, "roomId");
+                int score = Integer.parseInt(extractJsonValue(body, "score"));
+
+                rooms.putIfAbsent(roomId, Collections.synchronizedList(new ArrayList<>()));
+                
+                List<PlayerResult> players = rooms.get(roomId);
+                synchronized (players) {
+                    players.add(new PlayerResult(name, score));
+                }
+
+                System.out.println("[" + roomId + "] " + name + " made " + score + " points.");
+                String response = "{\"status\":\"success\",\"message\":\"Added to room " + roomId + "\"}";
+                sendResponse(exchange, response, "application/json", 200);
+            } catch (Exception e) {
+                sendResponse(exchange, "{\"error\":\"invalid json\"}", "application/json", 400);
             }
         }
     }
@@ -114,35 +107,53 @@ public class Main {
     static class RankingHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {
-                String query = exchange.getRequestURI().getQuery();
-                String roomId = "";
-                if (query != null && query.contains("roomId=")) {
-                    roomId = query.split("roomId=")[1].split("&")[0];
-                }
-
-                if (roomId.isEmpty() || !rooms.containsKey(roomId)) {
-                    sendResponse(exchange, "{\"error\":\"room not found\"}", "application/json", 404);
-                    return;
-                }
-
-                List<PlayerResult> players = new ArrayList<>(rooms.get(roomId));
-                players.sort((p1, p2) -> Integer.compare(p2.score, p1.score));
-
-                StringBuilder json = new StringBuilder("{\"roomId\":\"" + roomId + "\",\"ranking\":[");
-                for (int i = 0; i < players.size(); i++) {
-                    PlayerResult p = players.get(i);
-                    json.append("{\"pos\":").append(i + 1)
-                        .append(",\"name\":\"").append(p.name).append("\"")
-                        .append(",\"score\":").append(p.score).append("}");
-                    if (i < players.size() - 1) json.append(",");
-                }
-                json.append("]}");
-
-                sendResponse(exchange, json.toString(), "application/json", 200);
-            } else {
+            if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
                 sendResponse(exchange, "Unvalid method", "text/plain", 405);
+                return;
             }
+
+            String query = exchange.getRequestURI().getQuery();
+            String roomId = "";
+            if (query != null && query.contains("roomId=")) {
+                roomId = query.split("roomId=")[1].split("&")[0];
+            }
+
+            if (roomId.isEmpty() || !rooms.containsKey(roomId)) {
+                sendResponse(exchange, "{\"error\":\"room not found\"}", "application/json", 404);
+                return;
+            }
+
+            List<PlayerResult> players = rooms.get(roomId);
+            List<PlayerResult> sortedPlayers;
+            
+            synchronized (players) {
+                sortedPlayers = new ArrayList<>(players);
+            }
+            sortedPlayers.sort((p1, p2) -> Integer.compare(p2.score, p1.score));
+
+            StringBuilder json = new StringBuilder("{\"roomId\":\"" + roomId + "\",\"ranking\":[");
+            for (int i = 0; i < sortedPlayers.size(); i++) {
+                PlayerResult p = sortedPlayers.get(i);
+                json.append("{\"pos\":").append(i + 1)
+                    .append(",\"name\":\"").append(p.name).append("\"")
+                    .append(",\"score\":").append(p.score).append("}");
+                if (i < sortedPlayers.size() - 1) json.append(",");
+            }
+            json.append("]}");
+
+            sendResponse(exchange, json.toString(), "application/json", 200);
+        }
+    }
+
+    private static String readBody(HttpExchange exchange) throws IOException {
+        try (InputStream is = exchange.getRequestBody();
+             ByteArrayOutputStream bodyBytes = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = is.read(buffer)) != -1) {
+                bodyBytes.write(buffer, 0, bytesRead);
+            }
+            return new String(bodyBytes.toByteArray(), StandardCharsets.UTF_8);
         }
     }
 
@@ -164,8 +175,8 @@ public class Main {
         exchange.getResponseHeaders().set("Content-Type", contentType);
         byte[] responseBytes = response.getBytes(StandardCharsets.UTF_8);
         exchange.sendResponseHeaders(statusCode, responseBytes.length);
-        OutputStream os = exchange.getResponseBody();
-        os.write(responseBytes);
-        os.close();
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(responseBytes);
+        }
     } 
 }
