@@ -210,12 +210,18 @@ int main() {
     promptText.setFillColor(sf::Color::Yellow);
     promptText.setPosition({540.f, 120.f});
 
+    sf::Text leaderboardTitle(font);
+    leaderboardTitle.setString("Leaderboard");
+    leaderboardTitle.setCharacterSize(80);
+    leaderboardTitle.setFillColor(sf::Color::Yellow);
+    leaderboardTitle.setPosition({540.f, 120.f});
+
     const auto formatLeaderboard = [](const std::string& response) {
         if (response.rfind("ERROR", 0) == 0 || response.rfind("Connection failed", 0) == 0) {
             return std::string("Joined room, but could not load leaderboard:\n") + response;
         }
 
-        std::string leaderboard = "Leaderboard\n\n";
+        std::string leaderboard = "";
         size_t entryStart = response.find("\"pos\":");
         if (entryStart == std::string::npos) {
             return std::string("The server returned an invalid leaderboard.");
@@ -623,12 +629,12 @@ int main() {
                 promptText.setString("Enter code:");
                 window.draw(promptText);
                 window.draw(visualText);
-                window.draw(rankResult);
             } break;
 
             case screens::LEADERBOARD: {
                 window.clear();
                 window.draw(background);
+                window.draw(leaderboardTitle);
                 window.draw(rankResult);
                 window.draw(back);
                 window.draw(exit);
