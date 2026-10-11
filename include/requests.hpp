@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+
 #include "../httplib/httplib.h"
 
 inline constexpr const char* SERVER_URL = "localhost:8080";

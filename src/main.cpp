@@ -15,9 +15,7 @@
 #include "../include/onlinerooms.hpp"
 #include "../include/sprites.hpp"
 
-enum class screens : uint16_t {
-    GAME, OVER, MENU, SHOP, BOX, COIN, CARDS, USER, LOAD, RANK, LEADERBOARD
-};
+enum class screens : uint16_t { GAME, OVER, MENU, SHOP, BOX, COIN, CARDS, USER, LOAD, RANK, LEADERBOARD };
 namespace fs = std::filesystem;
 
 int main() {
@@ -243,8 +241,8 @@ int main() {
                 return std::string("The server returned an invalid leaderboard.");
             }
 
-            leaderboard += response.substr(entryStart + 6, positionEnd - entryStart - 6) +
-                           ". " + response.substr(nameStart, nameEnd - nameStart) + " - " +
+            leaderboard += response.substr(entryStart + 6, positionEnd - entryStart - 6) + ". " +
+                           response.substr(nameStart, nameEnd - nameStart) + " - " +
                            response.substr(scoreStart, scoreEnd - scoreStart) + " points\n";
             entryStart = response.find("\"pos\":", scoreEnd);
         }
@@ -264,8 +262,7 @@ int main() {
 
         const std::string totalPoints = userData.get("totalPoints");
         int score = 0;
-        const auto [end, error] =
-            std::from_chars(totalPoints.data(), totalPoints.data() + totalPoints.size(), score);
+        const auto [end, error] = std::from_chars(totalPoints.data(), totalPoints.data() + totalPoints.size(), score);
         if (error != std::errc{} || end != totalPoints.data() + totalPoints.size()) {
             rankResult.setString("Your saved score is invalid; could not join the room.");
             return;
@@ -461,7 +458,8 @@ int main() {
                         if (back.getGlobalBounds().contains(mousePos)) {
                             visualText.setString("");
                             screenBuf.back() = screens::MENU;
-                        } if (exit.getGlobalBounds().contains(mousePos)) {
+                        }
+                        if (exit.getGlobalBounds().contains(mousePos)) {
                             visualText.setString("");
                             screenBuf.back() = screens::RANK;
                             exitRoom(userData.get("username"), roomId);
