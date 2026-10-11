@@ -437,18 +437,25 @@ int main() {
                             std::string newUsername = playerInput.toAnsiString();
                             userData.save("username", newUsername);
                             usernameText.setString(newUsername);
+                            visualText.setString("");
+                            playerInput.clear();
                         }
                         break;
 
                     case screens::RANK:
                         if (back.getGlobalBounds().contains(mousePos)) {
+                            visualText.setString("");
+                            playerInput.clear();
                             screenBuf.back() = screens::MENU;
                         } else if (join.getGlobalBounds().contains(mousePos)) {
                             joinRoom();
+                            visualText.setString("");
+                            playerInput.clear();
                         }
                         break;
                     case screens::LEADERBOARD:
                         if (back.getGlobalBounds().contains(mousePos)) {
+                            visualText.setString("");
                             screenBuf.back() = screens::MENU;
                         }
                         break;
