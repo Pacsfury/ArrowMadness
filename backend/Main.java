@@ -23,10 +23,49 @@ public class Main {
         server.createContext("/api/test", new TestHandler());
         server.createContext("/api/newroom", new NewRoomHandler());
         server.createContext("/api/ranking", new RankingHandler());
+        server.createContext("/api/exitroom", new ExitHandler());
         
         server.setExecutor(null);
         server.start();
         System.out.println("Server working...");
+    }
+
+    static class ExitHandler implements  HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                sendResponse(exchange, "Unvalid method", "text/plain", 405);
+                return;
+            }
+
+            InputStream is = exchange.getRequestBody();
+            ByteArrayOutputStream bodyBytes = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = is.read(buffer)) != -1) {
+                bodyBytes.write(buffer, 0, bytesRead);
+            }
+            is.close();
+
+            String body = new String(bodyBytes.toByteArray(), StandardCharsets.UTF_8);
+            try {
+                String name = extractJsonValue(body, "name");
+                String roomId = extractJsonValue(body, "roomId");
+                List<PlayerResult> players = rooms.get(roomId);
+
+                if (name.isEmpty() || roomId.isEmpty()) {
+                    sendResponse(exchange, "{\"error\":\"name and roomId are required\"}", "application/json", 400);
+                } else if (players == null) {
+                    sendResponse(exchange, "{\"error\":\"room not found\"}", "application/json", 404);
+                } else if (!players.removeIf(player -> player.name.equals(name))) {
+                    sendResponse(exchange, "{\"error\":\"user not found in room\"}", "application/json", 404);
+                } else {
+                    sendResponse(exchange, "{\"status\":\"success\"}", "application/json", 200);
+                }
+            } catch (Exception e) {
+                sendResponse(exchange, "{\"error\":\"invalid json\"}", "application/json", 400);
+            }
+        }
     }
 
     static class TestHandler implements HttpHandler {

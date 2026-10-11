@@ -20,3 +20,9 @@ std::string getRanking(const std::string& roomId) {
     
     return response; 
 }
+
+void exitRoom(const std::string& name, const std::string& roomId) {
+    std::string json_body = "{\"name\":\"" + name + "\", \"roomId\":\"" + roomId + "\"}";
+    
+    std::string response = post(SERVER_URL, "/api/exitroom", json_body);
+}

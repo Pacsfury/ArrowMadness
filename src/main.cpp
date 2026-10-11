@@ -71,6 +71,7 @@ int main() {
     auto coinball = newSprite("img/coinball.png");
     auto rankbtn = newSprite("img/rank.png");
     auto join = newSprite("img/join.png");
+    auto exit = newSprite("img/exit.png");
 
     fs::path dir_path = "img/cards";
 
@@ -119,6 +120,8 @@ int main() {
     rankbtn.setScale({0.25, 0.25});
     join.setPosition({1670.f, 620.f});
     join.setScale({0.25, 0.25});
+    exit.setPosition({1220.f, 870.f});
+    exit.setScale({0.25, 0.25});
 
     sf::FloatRect bounds = up.getLocalBounds();
 
@@ -248,8 +251,9 @@ int main() {
         return leaderboard;
     };
 
+    std::string roomId = "";
     const auto joinRoom = [&]() {
-        const std::string roomId = visualText.getString().toAnsiString();
+        roomId = visualText.getString().toAnsiString();
         if (roomId.empty() || roomId.size() > 15 ||
             !std::all_of(roomId.begin(), roomId.end(), [](unsigned char character) {
                 return std::isalnum(character) || character == '-' || character == '_';
@@ -457,6 +461,10 @@ int main() {
                         if (back.getGlobalBounds().contains(mousePos)) {
                             visualText.setString("");
                             screenBuf.back() = screens::MENU;
+                        } if (exit.getGlobalBounds().contains(mousePos)) {
+                            visualText.setString("");
+                            screenBuf.back() = screens::RANK;
+                            exitRoom(userData.get("username"), roomId);
                         }
                         break;
                 }
@@ -625,6 +633,7 @@ int main() {
                 window.draw(background);
                 window.draw(rankResult);
                 window.draw(back);
+                window.draw(exit);
             } break;
         }
 
