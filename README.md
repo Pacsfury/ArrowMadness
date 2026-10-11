@@ -5,6 +5,7 @@ The game is still being actively developed.
 ## Building with Python
 
 1. **Configure a `.env` file.**
+
    Create a `.env` file in the root directory with the following variables:
    * `JAVA_EXE_PATH`: Path to your `java` executable file.
    * `JAVA_CLASSPATH`: Path to the directory where your `.class` files will be generated.
