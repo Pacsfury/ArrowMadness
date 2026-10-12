@@ -23,7 +23,7 @@ The game is still being actively developed.
 
 ## Testing with Python
 
-1. **COnfigure the `.env` file**
+1. **Configure the `.env` file**
 
 2. **Run Python**
 
