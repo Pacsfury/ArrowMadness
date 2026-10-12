@@ -9,6 +9,10 @@ static const inline std::vector<std::string> CARDS = {"COMMON.livesplusone", "SP
 
 std::vector<std::string> deck;
 
+void cards_init() {
+    deck.reserve(3);
+}
+
 void addCard(std::string card) {
     if (deck.size() < 3) {
         deck.push_back(card);

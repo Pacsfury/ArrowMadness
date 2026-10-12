@@ -25,6 +25,7 @@ int main() {
     window.draw(loading);
     window.display();
     std::vector<screens> screenBuf = {screens::LOAD};
+    cards_init();
 
     Table userData(1);
     userData.load();
