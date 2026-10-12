@@ -6,9 +6,9 @@
 
 #include "../include/datakeeper.hpp"
 
-void Table::save(std::string K, std::string V) { KV[K] = V; }
+void Table::save(const std::string& K, const std::string& V) { KV[K] = V; }
 
-std::string Table::get(std::string K) {
+std::string Table::get(const std::string& K) {
     auto it = KV.find(K);
     return it != KV.end() ? it->second : "";
 }

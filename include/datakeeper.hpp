@@ -8,8 +8,8 @@ private:
     int id;
 
 public:
-    void save(std::string K, std::string V);
-    std::string get(std::string K);
+    void save(const std::string& K, const std::string& V);
+    std::string get(const std::string& K);
     void file();
     void reset();
     void load();

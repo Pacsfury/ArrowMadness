@@ -25,7 +25,7 @@ int loadTexture(const std::string& path) {
     return -1;
 }
 
-sf::Sprite newSprite(const std::string texturePath, bool setorigin) {
+sf::Sprite newSprite(const std::string& texturePath, bool setorigin) {
     int textureId = loadTexture(texturePath);
 
     if (textureId != -1) {

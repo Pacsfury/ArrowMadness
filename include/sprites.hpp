@@ -6,6 +6,6 @@
 
 int loadTexture(const std::string& path);
 
-sf::Sprite newSprite(const std::string texturePath, bool setorigin = true);
+sf::Sprite newSprite(const std::string& texturePath, bool setorigin = true);
 
 std::vector<sf::Sprite> getDeckSprites();
