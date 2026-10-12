@@ -5,8 +5,9 @@
 #include <unordered_map>
 #include <vector>
 
+
 void cards_init();
 
-void addCard(std::string name);
+void addCard(const std::string& card);
 
-bool hasCard(std::string name);
+bool hasCard(const std::string& name);

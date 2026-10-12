@@ -1,24 +1,23 @@
 #include <algorithm>
+#include <array>
 #include <iostream>
 #include <string>
-#include <vector>
 
 #include "../include/cards.hpp"
 
-static const inline std::vector<std::string> CARDS = {"COMMON.livesplusone", "SPECIAL.extrapoints", "MYTHIC.coinballs"};
+static const inline std::array<std::string, 3> CARDS = {"COMMON.livesplusone", "SPECIAL.extrapoints", "MYTHIC.coinballs"};
 
-std::vector<std::string> deck;
+std::array<std::string, 3> deck;
+static size_t card_count = 0; 
 
 void cards_init() {
-    deck.reserve(3);
+    deck.fill(""); 
 }
 
-void addCard(std::string card) {
-    if (deck.size() < 3) {
-        deck.push_back(card);
-    } else {
-        deck.back() = card;
-    }
+void addCard(const std::string& card) {
+    deck[std::min(card_count++, size_t(2))] = card;
 }
 
-bool hasCard(std::string name) { return std::find(deck.begin(), deck.end(), name) != deck.end(); }
+bool hasCard(const std::string& name) { 
+    return std::find(deck.begin(), deck.end(), name) != deck.end(); 
+}
