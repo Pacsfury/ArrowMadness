@@ -20,3 +20,15 @@ The game is still being actively developed.
    python build/build.py server # Build server only
    python build/build.py client # Build client only
    ```
+
+## Testing with Python
+
+1. **COnfigure the `.env` file**
+
+2. **Run Python**
+
+   ```bash
+   python test/main.py server # Test server (ping)
+   ```
+
+> Other test cases, as game and client will be coming son, as they are more complex
