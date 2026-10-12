@@ -356,7 +356,7 @@ int main() {
 
                             if (res) {
                                 userData.load();
-                                grantCoins(getCoinsToAdd(), coins, userData);
+                                cleanGrantCoins(getCoinsToAdd(), coins, userData);
                                 resetCoinsToAdd();
 
                                 userData.save("totalPoints",

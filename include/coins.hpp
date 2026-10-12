@@ -6,4 +6,7 @@
 #include "../include/sprites.hpp"
 
 sf::Sprite grantCoins(int coins, int& count, Table& table);
+
+void cleanGrantCoins(int coins, int& count, Table& table);
+
 int readCoins(Table& table);
