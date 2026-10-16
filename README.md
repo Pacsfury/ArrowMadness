@@ -1,6 +1,6 @@
 # Arrow Madness
 
-The game is still being actively developed.
+The game is still being actively developed. The game may contain bug, bad code, unoptimized code, etc.
 
 ## Building with Python
 
